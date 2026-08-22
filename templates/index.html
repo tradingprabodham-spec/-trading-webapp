@@ -1,1 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Auto-Trade Control Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#11151c; --panel-2:#161b24; --line:#232a36; --text:#e6e9ef; --sub:#8a93a3;
+    --bull:#22c55e; --bull-dim:#16341f; --bear:#f0475a; --bear-dim:#3a1620; --watch:#e8a33d;
+    --mono:'IBM Plex Mono', monospace; --sans:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); padding:28px 32px 60px;}
+  h1{font-size:20px; margin:0 0 4px;}
+  .sub{color:var(--sub); font-size:13px; margin-bottom:22px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:20px;}
+  .panel h2{font-size:15px; margin:0 0 14px; font-weight:800;}
+  label{display:block; font-size:11px; color:var(--sub); margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em;}
+  input, select{width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font-family:var(--mono); font-size:13px;}
+  .row{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-bottom:12px;}
+  button{font-family:var(--sans); font-weight:700; font-size:13px; cursor:pointer; border-radius:6px; border:1px solid var(--line); padding:9px 16px; background:var(--panel-2); color:var(--text);}
+  button.primary{background:var(--watch); border-color:var(--watch); color:#171006;}
+  button.danger{background:var(--bear-dim); border-color:var(--bear); color:var(--bear);}
+  .symbol-card{background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:14px;}
+  .symbol-card .head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .status-dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px;}
+  .status-dot.on{background:var(--bull); box-shadow:0 0 6px var(--bull);}
+  .status-dot.off{background:#555;}
+  .preview{font-family:var(--mono); font-size:11.5px; color:var(--sub); margin-top:8px; padding:8px; background:var(--panel); border-radius:6px;}
+  .log-line{font-family:var(--mono); font-size:11px; padding:3px 0; border-bottom:1px solid #1c212b; color:var(--sub);}
+  .log-line.warn{color:var(--watch);} .log-line.error{color:var(--bear);}
+  #logBox{max-height:260px; overflow-y:auto;}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px;}
+  th{text-align:left; color:var(--sub); font-size:10.5px; text-transform:uppercase; padding:8px; border-bottom:1px solid var(--line);}
+  td{padding:8px; border-bottom:1px solid #1c212b;}
+  .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<h1>🤖 Auto-Trade Control Panel</h1>
+<div class="sub">Delta Exchange + Upstox — fully customizable per symbol. Settings persist automatically. &nbsp;·&nbsp; <a href="/screener" style="color:var(--watch);">📊 Open Screener, Option Chain &amp; Market Overview →</a></div>
+
+<div class="panel">
+  <h2>Global Settings</h2>
+  <div class="row">
+    <div><label>Mode</label>
+      <select id="g_dry_run"><option value="true">DRY RUN (no real orders)</option><option value="false">Live orders</option></select>
+    </div>
+    <div><label>Delta Environment</label>
+      <select id="g_delta_env"><option value="testnet">Testnet (fake funds)</option><option value="live">Live (real money)</option></select>
+    </div>
+    <div><label>Price poll (secs)</label><input id="g_price_poll" type="number" value="15"></div>
+    <div><label>EMA poll (secs)</label><input id="g_ema_poll" type="number" value="300"></div>
+  </div>
+  <div class="row">
+    <div><label>Delta API Key</label><input id="g_delta_key" type="password"></div>
+    <div><label>Delta API Secret</label><input id="g_delta_secret" type="password"></div>
+    <div><label>Upstox Access Token</label><input id="g_upstox_token" type="password"></div>
+  </div>
+  <div class="row">
+    <div><label>Telegram Bot Token</label><input id="g_tg_token" type="password"></div>
+    <div><label>Telegram Chat ID</label><input id="g_tg_chat" type="text"></div>
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="saveGlobalBtn">Save Settings</button>
+    <span id="saveStatus" class="sub" style="font-size:12px;"></span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="toolbar" style="justify-content:space-between; margin-bottom:14px;">
+    <h2 style="margin:0;">Symbols</h2>
+    <button id="addSymbolBtn">+ Add Symbol</button>
+  </div>
+  <div id="symbolsContainer"></div>
+</div>
+
+<div class="panel">
+  <div class="toolbar" style="justify-content:space-between;">
+    <h2 style="margin:0;"><span class="status-dot off" id="engineDot"></span>Bot Engine</h2>
+    <div class="toolbar">
+      <button class="primary" id="startBtn">Start</button>
+      <button class="danger" id="stopBtn">Stop</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Open Positions</h2>
+  <table id="posTable"><thead><tr><th>Symbol</th><th>Leg</th><th>Side</th><th>Entry</th><th>Target</th><th>Stoploss</th><th>Qty</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="panel">
+  <h2>Trade Log</h2>
+  <table id="logTable"><thead><tr><th>Symbol</th><th>Leg</th><th>Side</th><th>Entry</th><th>Exit</th><th>Reason</th><th>P&amp;L ($)</th><th>P&amp;L (₹)</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="panel">
+  <h2>Live Logs</h2>
+  <div id="logBox"></div>
+</div>
+
+<script>
+let currentConfig = null;
+
+function symbolCardHTML(s, idx){
+  return `
+  <div class="symbol-card" data-idx="${idx}">
+    <div class="head">
+      <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer;">
+        <input type="checkbox" class="f-enabled" ${s.enabled?'checked':''}> <b style="color:var(--text); font-size:14px;">${s.symbol || 'NEW'}</b>
+      </label>
+      <button class="danger removeBtn">Remove</button>
+    </div>
+    <div class="row">
+      <div><label>Broker</label><select class="f-broker"><option value="delta" ${s.broker==='delta'?'selected':''}>Delta</option><option value="upstox" ${s.broker==='upstox'?'selected':''}>Upstox</option></select></div>
+      <div><label>Symbol</label><input class="f-symbol" value="${s.symbol||''}" placeholder="BTCUSD / RELIANCE"></div>
+      <div><label>Timeframe</label><select class="f-timeframe"><option value="1d" ${s.timeframe==='1d'?'selected':''}>Daily</option><option value="15m" ${s.timeframe==='15m'?'selected':''}>15 minute</option></select></div>
+      <div><label>Ratio</label><select class="f-ratio"><option value="1:1" ${s.ratio_mode==='1:1'?'selected':''}>1:1</option><option value="custom" ${s.ratio_mode==='custom'?'selected':''}>Custom</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Target value</label><input class="f-target-val" type="number" value="${s.target_value}"></div>
+      <div><label>Target unit</label><select class="f-target-unit"><option value="usd" ${s.target_unit==='usd'?'selected':''}>$ (points)</option><option value="inr" ${s.target_unit==='inr'?'selected':''}>₹ (rupees)</option></select></div>
+      <div><label>Stoploss value</label><input class="f-sl-val" type="number" value="${s.stoploss_value}"></div>
+      <div><label>Stoploss unit</label><select class="f-sl-unit"><option value="usd" ${s.stoploss_unit==='usd'?'selected':''}>$ (points)</option><option value="inr" ${s.stoploss_unit==='inr'?'selected':''}>₹ (rupees)</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Quantity mode</label><select class="f-qty-mode"><option value="fixed" ${s.quantity_mode==='fixed'?'selected':''}>Fixed contracts</option><option value="from_rupees" ${s.quantity_mode==='from_rupees'?'selected':''}>From ₹ risk amount</option></select></div>
+      <div><label>Fixed quantity</label><input class="f-qty-val" type="number" value="${s.quantity_value}"></div>
+      <div><label>₹ risk amount</label><input class="f-rupee-risk" type="number" value="${s.rupee_risk_amount}"></div>
+      <div><label>USD/INR rate</label><input class="f-rate" type="number" step="0.1" value="${s.usd_inr_rate}"></div>
+    </div>
+    <div class="preview" data-preview>Calculating…</div>
+  </div>`;
+}
+
+function readSymbolCard(card){
+  return {
+    broker: card.querySelector('.f-broker').value,
+    symbol: card.querySelector('.f-symbol').value.trim().toUpperCase(),
+    enabled: card.querySelector('.f-enabled').checked,
+    timeframe: card.querySelector('.f-timeframe').value,
+    ratio_mode: card.querySelector('.f-ratio').value,
+    target_unit: card.querySelector('.f-target-unit').value,
+    target_value: parseFloat(card.querySelector('.f-target-val').value)||0,
+    stoploss_unit: card.querySelector('.f-sl-unit').value,
+    stoploss_value: parseFloat(card.querySelector('.f-sl-val').value)||0,
+    quantity_mode: card.querySelector('.f-qty-mode').value,
+    quantity_value: parseFloat(card.querySelector('.f-qty-val').value)||1,
+    rupee_risk_amount: parseFloat(card.querySelector('.f-rupee-risk').value)||0,
+    usd_inr_rate: parseFloat(card.querySelector('.f-rate').value)||83,
+  };
+}
+
+async function updatePreview(card){
+  const cfg = readSymbolCard(card);
+  try{
+    const res = await fetch('/api/preview', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cfg)});
+    const p = await res.json();
+    card.querySelector('[data-preview]').textContent =
+      `Target move: $${p.target_usd_move} · Stoploss move: $${p.stoploss_usd_move} · Quantity: ${p.quantity} · Est. profit at target: ₹${p.est_profit_at_target_inr} · Est. loss at stoploss: ₹${p.est_loss_at_stoploss_inr}`;
+  }catch(e){ card.querySelector('[data-preview]').textContent = 'Preview error: '+e.message; }
+}
+
+function renderSymbols(){
+  const container = document.getElementById('symbolsContainer');
+  container.innerHTML = currentConfig.symbols.map(symbolCardHTML).join('');
+  container.querySelectorAll('.symbol-card').forEach(card=>{
+    card.querySelectorAll('input,select').forEach(el=> el.addEventListener('input', ()=> updatePreview(card)));
+    card.querySelector('.removeBtn').onclick = ()=>{
+      const idx = parseInt(card.dataset.idx);
+      currentConfig.symbols.splice(idx,1);
+      renderSymbols();
+    };
+    updatePreview(card);
+  });
+}
+
+document.getElementById('addSymbolBtn').onclick = ()=>{
+  currentConfig.symbols.push({
+    broker:'delta', symbol:'', enabled:true, timeframe:'1d', ratio_mode:'1:1',
+    target_unit:'usd', target_value:1000, stoploss_unit:'usd', stoploss_value:1000,
+    quantity_mode:'fixed', quantity_value:1, rupee_risk_amount:1000, usd_inr_rate:83
+  });
+  renderSymbols();
+};
+
+function loadGlobalIntoForm(g){
+  document.getElementById('g_dry_run').value = String(g.dry_run);
+  document.getElementById('g_delta_env').value = g.delta_env;
+  document.getElementById('g_price_poll').value = g.price_poll_secs;
+  document.getElementById('g_ema_poll').value = g.ema_poll_secs;
+  document.getElementById('g_delta_key').value = g.delta_api_key;
+  document.getElementById('g_delta_secret').value = g.delta_api_secret;
+  document.getElementById('g_upstox_token').value = g.upstox_access_token;
+  document.getElementById('g_tg_token').value = g.telegram_bot_token;
+  document.getElementById('g_tg_chat').value = g.telegram_chat_id;
+}
+
+function readGlobalFromForm(){
+  return {
+    dry_run: document.getElementById('g_dry_run').value === 'true',
+    delta_env: document.getElementById('g_delta_env').value,
+    price_poll_secs: parseInt(document.getElementById('g_price_poll').value)||15,
+    ema_poll_secs: parseInt(document.getElementById('g_ema_poll').value)||300,
+    delta_api_key: document.getElementById('g_delta_key').value.trim(),
+    delta_api_secret: document.getElementById('g_delta_secret').value.trim(),
+    upstox_access_token: document.getElementById('g_upstox_token').value.trim(),
+    telegram_bot_token: document.getElementById('g_tg_token').value.trim(),
+    telegram_chat_id: document.getElementById('g_tg_chat').value.trim(),
+  };
+}
+
+async function loadConfig(){
+  const res = await fetch('/api/config');
+  currentConfig = await res.json();
+  loadGlobalIntoForm(currentConfig.global);
+  renderSymbols();
+}
+
+async function saveConfig(){
+  currentConfig.global = readGlobalFromForm();
+  currentConfig.symbols = [...document.querySelectorAll('.symbol-card')].map(readSymbolCard);
+  await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(currentConfig)});
+  document.getElementById('saveStatus').textContent = 'Saved at ' + new Date().toLocaleTimeString();
+}
+document.getElementById('saveGlobalBtn').onclick = saveConfig;
+
+document.getElementById('startBtn').onclick = async ()=>{
+  await saveConfig();
+  await fetch('/api/start', {method:'POST'});
+  poll();
+};
+document.getElementById('stopBtn').onclick = async ()=>{
+  await fetch('/api/stop', {method:'POST'});
+  poll();
+};
+
+async function poll(){
+  try{
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    document.getElementById('engineDot').className = 'status-dot ' + (data.running ? 'on' : 'off');
+
+    const posBody = document.querySelector('#posTable tbody');
+    let posRows = [];
+    Object.entries(data.state.symbols||{}).forEach(([sym, s])=>{
+      (s.positions||[]).forEach(p=>{
+        posRows.push(`<tr><td>${sym}</td><td>${p.leg}</td><td>${p.side}</td><td>${p.entry.toFixed(2)}</td><td>${p.target.toFixed(2)}</td><td>${p.stoploss.toFixed(2)}</td><td>${p.qty}</td></tr>`);
+      });
+    });
+    posBody.innerHTML = posRows.join('') || '<tr><td colspan="7" style="color:var(--sub);">No open positions.</td></tr>';
+
+    const logBody = document.querySelector('#logTable tbody');
+    const trades = [...(data.state.log||[])].reverse().slice(0,50);
+    logBody.innerHTML = trades.map(t=>`<tr><td>${t.symbol}</td><td>${t.leg}</td><td>${t.side}</td><td>${t.entry.toFixed(2)}</td><td>${t.exit.toFixed(2)}</td><td>${t.reason}</td><td>${t.pnl_usd.toFixed(2)}</td><td>${t.pnl_inr.toFixed(2)}</td></tr>`).join('') || '<tr><td colspan="8" style="color:var(--sub);">No trades yet.</td></tr>';
+
+    const logBox = document.getElementById('logBox');
+    logBox.innerHTML = data.logs.map(l=>{
+      const cls = l.includes('[WARNING]') ? 'warn' : l.includes('[ERROR]') ? 'error' : '';
+      return `<div class="log-line ${cls}">${l}</div>`;
+    }).join('');
+    logBox.scrollTop = logBox.scrollHeight;
+  }catch(e){ console.error(e); }
+}
+
+loadConfig();
+poll();
+setInterval(poll, 5000);
+</script>
+</body>
+</html>
 
