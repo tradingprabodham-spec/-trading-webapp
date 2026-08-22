@@ -1,0 +1,79 @@
+# Combined Auto-Trade Web App (Delta + Upstox)
+
+A real web application (not just a browser dashboard) with a settings UI where every symbol's
+**risk:reward ratio, quantity, timeframe, and $/₹ conversion** is fully customizable — and the
+trading engine runs server-side, so it's genuinely 24/7 once deployed (no browser tab needed).
+
+## What's different from the earlier scripts
+
+- **One web page controls everything** — add/remove symbols, set ratio (1:1 or custom),
+  set target/stoploss in $ or ₹, choose fixed quantity or auto-size from a ₹ risk amount,
+  see a live preview of what each config resolves to before saving.
+- **Runs as a proper server** (Flask), not a script — deployable the same way (Railway etc.),
+  but now the *configuration* also happens through the browser instead of editing env vars.
+- **Multi-broker structure** — Delta Exchange is fully wired up; Upstox candle/LTP reading is
+  included, order placement is stubbed pending your static-IP whitelist (see note below).
+
+## Files
+
+- `app.py` — Flask server. Two pages: `/` (bot control panel) and `/screener` (the full EMA
+  screener, Option Chain, and Market Overview — same proven tool from before, now served as
+  part of this one app, with a link back and forth between the two).
+- `bot_engine.py` — the trading loop (EMA crossover detection, position management) for both brokers
+- `calc.py` — the $/₹ calculator: resolves each symbol's ratio_mode/target/stoploss/quantity settings
+  into actual price-move targets and contract quantities
+- `config_store.py` — persists your settings to `app_config.json` on disk
+- `templates/index.html` — the control panel UI (settings, symbols, live bot status)
+- `templates/screener.html` — the screener/option-chain/market-overview page (client-side — paste
+  your Upstox token there directly in the browser, same as before; this page doesn't touch the
+  server-side bot engine)
+- `requirements.txt`
+
+## Run locally
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+Open `http://localhost:8080` in your browser. Fill in your Delta API key/secret (testnet first!),
+configure your symbols, click **Save Settings**, then **Start**.
+
+## Deploy for 24/7 (same as before)
+
+Push these files to your GitHub repo (same repo you used before, or a new one), connect it to
+Railway, and set the **Start Command** to:
+
+```
+python app.py
+```
+
+Railway will detect the `PORT` environment variable automatically and the app will bind to it.
+Once deployed, open the Railway-provided URL in your browser any time to check status or change
+settings — the bot itself keeps running on Railway's server regardless of whether you have that
+page open.
+
+## How the customization works
+
+Each symbol has these independent settings:
+- **Ratio mode**: `1:1` (target and stoploss are equal) or `custom` (set them separately)
+- **Target/Stoploss unit**: `$` (plain price points, like the original BTCUSD setup) or `₹`
+  (rupees, auto-converted to the equivalent price move using your USD/INR rate)
+- **Quantity mode**: `fixed` (exact contract count, e.g. 1) or `from_rupees` (the app computes
+  the contract count so that a stoploss hit loses approximately your specified ₹ amount — rounded
+  to the nearest whole contract since Delta requires integer sizes)
+
+The settings page shows a live preview (resolved $ move, quantity, and estimated ₹ profit/loss)
+before you save, so you can sanity-check the numbers.
+
+## Upstox note (static IP)
+
+Upstox blocks order placement without a whitelisted static IP. Candle/LTP reading works fine
+without one. Once you have a static IP (Railway Pro's shared static IP, or a small VPS), update
+`bot_engine.py`'s Upstox section to place real orders the same way the Delta path does — ask me
+and I'll wire it in once you're ready.
+
+## Safety
+
+- Defaults to `dry_run: true` and Delta `testnet` — verify signals look right before flipping either.
+- Never commit `app_config.json` to a public repo once it has real API keys in it.
