@@ -1,0 +1,2588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>F&O EMA Crossover Screener — Upstox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d12;
+    --panel:#11151c;
+    --panel-2:#161b24;
+    --line:#232a36;
+    --text:#e6e9ef;
+    --sub:#8a93a3;
+    --bull:#22c55e;
+    --bull-dim:#16341f;
+    --bear:#f0475a;
+    --bear-dim:#3a1620;
+    --watch:#e8a33d;
+    --watch-dim:#3a2c12;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); padding:28px 32px 60px;
+    min-height:100vh;
+  }
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    flex-wrap:wrap; gap:18px; margin-bottom:22px;
+    border-bottom:1px solid var(--line); padding-bottom:18px;
+  }
+  .brand-eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    color:var(--watch); text-transform:uppercase; margin-bottom:6px;
+  }
+  h1{font-size:22px; margin:0; font-weight:800; letter-spacing:-.01em;}
+  .sub{color:var(--sub); font-size:13px; margin-top:4px;}
+  .connect-row{display:flex; gap:8px; align-items:center;}
+  .connect-row input{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    font-family:var(--mono); font-size:12px; padding:9px 12px; border-radius:6px;
+    width:280px; outline:none;
+  }
+  .connect-row input:focus{border-color:var(--watch);}
+  button{
+    font-family:var(--sans); font-weight:600; font-size:13px; cursor:pointer;
+    border-radius:6px; border:1px solid var(--line); padding:9px 14px;
+    background:var(--panel-2); color:var(--text); transition:.15s;
+  }
+  button:hover{border-color:#3a4353;}
+  button.primary{background:var(--watch); border-color:var(--watch); color:#171006;}
+  button.primary:hover{filter:brightness(1.08);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  .status-dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+  .status-dot.off{background:#555;}
+  .status-dot.on{background:var(--bull); box-shadow:0 0 6px var(--bull);}
+  .status-line{font-family:var(--mono); font-size:11px; color:var(--sub); display:flex; align-items:center;}
+
+  .toolbar{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+    gap:12px; margin-bottom:14px;
+  }
+  .filters{display:flex; gap:6px;}
+  .filters button{padding:7px 12px; font-size:12px;}
+  .filters button.active{background:var(--text); color:var(--bg); border-color:var(--text);}
+  .addrow{display:flex; gap:6px;}
+  .addrow input{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    font-family:var(--mono); font-size:12px; padding:8px 10px; border-radius:6px; outline:none;
+  }
+  .addrow input:focus{border-color:var(--watch);}
+  #symIn{width:130px;}
+
+  table{width:100%; border-collapse:collapse; background:var(--panel); border-radius:10px; overflow:hidden; border:1px solid var(--line);}
+  thead th{
+    text-align:left; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--sub); font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line);
+    background:var(--panel-2); cursor:pointer; user-select:none;
+  }
+  thead th:hover{color:var(--text);}
+  tbody td{padding:11px 14px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#141a23;}
+  .sym{font-weight:700; font-family:var(--mono); letter-spacing:.01em;}
+  .ltp{font-family:var(--mono); font-variant-numeric:tabular-nums; transition:background-color .35s ease;}
+  .ltp.flash-up{background-color:rgba(34,197,94,0.22); border-radius:4px;}
+  .ltp.flash-down{background-color:rgba(240,71,90,0.22); border-radius:4px;}
+  .lot{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--sub);}
+  .chg{font-family:var(--mono); font-size:11.5px;}
+  .chg.up{color:var(--bull);} .chg.down{color:var(--bear);}
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11px;
+    font-weight:600; padding:4px 8px; border-radius:5px; white-space:nowrap;
+  }
+  .badge.bull{background:var(--bull-dim); color:var(--bull);}
+  .badge.bear{background:var(--bear-dim); color:var(--bear);}
+  .badge.na{background:#1c212b; color:#5b6472;}
+  .badge .arrow{font-size:10px;}
+  .rm{background:transparent; border:none; color:var(--sub); font-size:16px; padding:2px 6px;}
+  .rm:hover{color:var(--bear);}
+  .empty{padding:40px; text-align:center; color:var(--sub); font-size:13px;}
+  .err{color:var(--bear); font-family:var(--mono); font-size:10.5px; display:inline-block; max-width:180px; white-space:normal; line-height:1.4; cursor:pointer; text-decoration:underline dotted;}
+  .loading-cell{color:var(--sub); font-family:var(--mono); font-size:11px;}
+  canvas.spark{display:block;}
+
+  .banner{
+    background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--watch);
+    padding:12px 16px; border-radius:6px; font-size:12.5px; color:var(--sub); margin-bottom:16px; line-height:1.6;
+  }
+  .banner b{color:var(--text);}
+  .banner code{background:#1c212b; padding:1px 5px; border-radius:3px; color:var(--watch); font-family:var(--mono);}
+  .foot{margin-top:26px; font-size:11.5px; color:#5b6472; line-height:1.7; font-family:var(--mono);}
+  .foot a{color:var(--sub);}
+  .progress-wrap{
+    display:none; align-items:center; gap:10px; font-family:var(--mono); font-size:11px; color:var(--sub);
+    margin-bottom:12px; background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:9px 14px;
+  }
+  .progress-wrap.show{display:flex;}
+  .progress-bar{flex:1; height:6px; background:#1c212b; border-radius:3px; overflow:hidden;}
+  .progress-bar-fill{height:100%; background:var(--watch); width:0%; transition:width .2s;}
+  .tab-btn{background:var(--panel-2); color:var(--sub); font-weight:700;}
+  .tab-btn.active-tab{background:var(--panel); color:var(--text); border-bottom:2px solid var(--panel) !important; position:relative; top:1px;}
+  .mo-box{background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:14px;}
+  .mo-box h4{margin:0 0 10px; font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); font-weight:800;}
+  .mo-row{display:flex; justify-content:space-between; align-items:center; padding:8px 8px; font-family:var(--mono); font-size:15px; font-weight:700; border-bottom:1px solid #1c212b; border-radius:5px; transition:background-color .3s ease;}
+  .mo-row:last-child{border-bottom:none;}
+  .mo-row:first-child{background:var(--watch-dim); border-left:3px solid var(--watch); padding-left:9px; margin-bottom:2px;}
+  .mo-row .mo-left{display:flex; flex-direction:column; gap:2px;}
+  .mo-row .mo-price{font-size:11px; font-weight:500; color:var(--sub);}
+  .mo-empty{color:var(--sub); font-size:11.5px; font-family:var(--mono); padding:8px 0;}
+  .news-card{background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--watch); border-radius:6px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;}
+  .news-card img{width:64px; height:64px; object-fit:cover; border-radius:6px; flex-shrink:0;}
+  .news-card .news-title{font-weight:700; font-size:13.5px; color:var(--text); text-decoration:none; display:block; margin-bottom:4px;}
+  .news-card .news-title:hover{color:var(--watch);}
+  .news-card .news-meta{font-family:var(--mono); font-size:10.5px; color:var(--sub);}
+  .mo-row .mo-price.flash-up{color:var(--bull);}
+  .mo-row .mo-price.flash-down{color:var(--bear);}
+</style>
+</head>
+<body>
+
+  <div style="padding:10px 32px; background:#161b24; border-bottom:1px solid #232a36;">
+    <a href="/" style="color:#e8a33d; font-family:'IBM Plex Mono',monospace; font-size:12px; text-decoration:none;">← 🤖 Back to Auto-Trade Control Panel</a>
+  </div>
+
+  <div class="topbar">
+    <div>
+      <div class="brand-eyebrow">Upstox · Live</div>
+      <h1>F&amp;O EMA Crossover Screener</h1>
+      <div class="sub">Tracks 9 / 21 / 200 EMA crossovers on daily candles across your F&amp;O watchlist.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+      <div class="connect-row">
+        <input id="apiKeyIn" type="text" placeholder="Upstox API Key (client_id)" autocomplete="off" style="width:200px;">
+        <input id="redirectIn" type="text" placeholder="Redirect URI" autocomplete="off" style="width:180px;">
+        <button id="loginLinkBtn">Open Upstox Login</button>
+      </div>
+      <div class="connect-row">
+        <input id="tokenIn" type="password" placeholder="Paste Upstox access token…" autocomplete="off">
+        <button class="primary" id="connectBtn">Connect</button>
+      </div>
+      <div class="status-line"><span class="status-dot off" id="statusDot"></span><span id="statusText">Not connected — token stays in this browser session only</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:0;">
+    <button id="tabBtnScreener" class="tab-btn active-tab" style="border-radius:6px 6px 0 0; border-bottom:none; padding:10px 18px;">📊 Screener &amp; Option Chain</button>
+    <button id="tabBtnTrading" class="tab-btn" style="border-radius:6px 6px 0 0; border-bottom:none; padding:10px 18px;">💰 Upstox Trading &amp; Ledger</button>
+    <button id="tabBtnCrypto" class="tab-btn" style="border-radius:6px 6px 0 0; border-bottom:none; padding:10px 18px;">₿ Crypto (Delta Exchange)</button>
+  </div>
+
+  <div id="tabScreener">
+
+  <div class="banner" id="sandboxBanner" style="display:none; border-left-color:var(--bull);">
+    <b>🧪 Demo/Sandbox mode is ON.</b> Orders placed here are fake — no real money moves. Live market prices (LTP, EMA, option chain) still come from your real token — only order placement and the ledger route to the sandbox.
+  </div>
+
+  <div class="banner" id="loginBanner" style="border-left-color:#5b8dee;">
+    <b>Quick daily login (2 steps, ~20s):</b><br>
+    1) Fill your Upstox <b>API Key</b> and <b>Redirect URI</b> (from your Upstox Developer app) once — click <b>Open Upstox Login</b>, log in, and after redirect grab the <code>code</code> param from the URL bar.<br>
+    2) Exchange it for a token — run this once (needs your API Secret, never paste that here):<br>
+    <code id="curlSnippet" style="display:block; margin-top:6px; padding:8px; white-space:pre-wrap;">curl -X POST https://api.upstox.com/v2/login/authorization/token -H "accept: application/json" -H "Content-Type: application/x-www-form-urlencoded" -d "code=PASTE_CODE&client_id=YOUR_API_KEY&client_secret=YOUR_API_SECRET&redirect_uri=YOUR_REDIRECT_URI&grant_type=authorization_code"</code>
+    Copy the <code>access_token</code> from the response into the field below. This can't be fully automated in-browser since the token exchange needs your API Secret, which should never sit in client-side JavaScript.
+  </div>
+
+  <div class="banner" id="infoBanner">
+    <b>How instrument keys work now:</b> every symbol's instrument key and lot size is resolved live from Upstox's own Instrument Search API when you connect — no hardcoded ISINs, so stock splits/bonus corporate actions can't break it. Token is used only for direct calls from your browser to <code>api.upstox.com</code>. If requests fail with a network/CORS error, that's Upstox blocking cross-origin calls from this page, not something this dashboard controls.
+  </div>
+
+  <div class="oc-panel" style="margin-bottom:22px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:16px; margin:0; font-weight:800;">📌 Market Overview</h2>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <label class="status-line" style="gap:6px; cursor:pointer;">
+          <input type="checkbox" id="moAutoChk" style="accent-color:var(--watch);">
+          Auto-refresh fast boxes every 30s
+        </label>
+        <button class="primary" id="moRefreshBtn">Refresh Market Overview</button>
+        <span class="status-line" id="moStatus"></span>
+      </div>
+    </div>
+    <div class="banner" style="border-left-color:var(--watch); font-size:11.5px;">
+      Gainers/Losers/Volume/Sector boxes use whatever's currently in your watchlist below — load the full F&amp;O list first for a meaningful market-wide view. IV &amp; Straddle boxes fetch each stock's ATM option data (slower, F&amp;O-eligible stocks only). The "75% of NIFTY weight" list is a static, illustrative approximation — actual index weights drift over time.
+    </div>
+    <div id="moGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-top:16px; align-items:start;"></div>
+    <h3 style="font-size:12.5px; margin:22px 0 10px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em;">Options Data (slower — fetched via option chain)</h3>
+    <div id="moGridSlow" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; align-items:start;"></div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <span id="progressText">Resolving instruments…</span>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters">
+      <button class="active" data-f="all">All</button>
+      <button data-f="bull">Bullish signals</button>
+      <button data-f="bear">Bearish signals</button>
+      <button data-f="fresh">Crossed today</button>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <label class="status-line" style="gap:6px;">
+        Timeframe
+        <select id="timeframeSel" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:11px; padding:5px 6px;">
+          <option value="day">Daily</option>
+          <option value="15m">15 minute</option>
+        </select>
+      </label>
+      <span class="status-line" id="lastUpdated">Never refreshed</span>
+      <div class="addrow">
+        <input id="symIn" placeholder="SYMBOL e.g. RELIANCE">
+        <button id="addBtn">+ Add</button>
+      </div>
+      <button id="loadFullBtn">Load full NSE F&amp;O list (~175)</button>
+      <label class="status-line" style="gap:6px; cursor:pointer;">
+        <input type="checkbox" id="autoRefreshChk" style="accent-color:var(--watch);">
+        Auto-refresh EMA/candles every
+        <select id="autoRefreshInterval" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:11px; padding:3px 4px;">
+          <option value="30">30s</option>
+          <option value="60" selected>60s</option>
+          <option value="120">2m</option>
+          <option value="300">5m</option>
+        </select>
+        <span style="color:var(--bull);">● live price ticks every 3s</span>
+      </label>
+      <button class="primary" id="refreshBtn" disabled>Refresh all</button>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th data-sort="symbol">Symbol</th>
+        <th data-sort="ltp">LTP</th>
+        <th data-sort="lot">Lot size</th>
+        <th data-sort="ema9">EMA 9</th>
+        <th data-sort="ema21">EMA 21</th>
+        <th data-sort="ema200">EMA 200</th>
+        <th>Chart (price · 21 · 200 EMA)</th>
+        <th data-sort="s921">9 / 21</th>
+        <th data-sort="s9200">9 / 200</th>
+        <th data-sort="s21200">21 / 200</th>
+        <th>Trade</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div class="oc-panel" id="ocPanelWrap" style="margin-top:26px;">
+    <h2 style="font-size:16px; margin:0 0 12px; font-weight:800;">Option Chain</h2>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <label class="status-line" style="gap:6px;">
+          Underlying
+          <select id="ocUnderlying" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:11px; padding:6px 8px; min-width:140px;"></select>
+        </label>
+        <label class="status-line" style="gap:6px;">
+          Expiry
+          <select id="ocExpiry" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:11px; padding:6px 8px; min-width:130px;"></select>
+        </label>
+        <button class="primary" id="ocLoadBtn">Load chain</button>
+      </div>
+      <span class="status-line" id="ocStatus"></span>
+    </div>
+    <table id="ocTable">
+      <thead>
+        <tr>
+          <th>Call</th>
+          <th>Call IV</th>
+          <th>Call OI</th>
+          <th>Call Chg OI</th>
+          <th>Call LTP</th>
+          <th style="text-align:center;">Strike</th>
+          <th>Put LTP</th>
+          <th>Put Chg OI</th>
+          <th>Put OI</th>
+          <th>Put IV</th>
+          <th>Put</th>
+        </tr>
+      </thead>
+      <tbody id="ocTbody"><tr><td colspan="11" class="empty">Pick an underlying and expiry, then Load chain.</td></tr></tbody>
+    </table>
+  </div>
+
+  </div>
+  <!-- end #tabScreener -->
+
+  <div id="orderModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center;">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:24px; width:360px; max-width:90vw;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <h3 id="orderModalTitle" style="margin:0; font-size:16px; font-weight:800;">Buy RELIANCE</h3>
+        <button id="orderModalClose" style="background:none; border:none; color:var(--sub); font-size:18px; padding:2px 6px;">✕</button>
+      </div>
+      <div class="banner" style="border-left-color:var(--bear); margin:12px 0; font-size:11.5px;">
+        ⚠️ This places a <b>real order with real money</b> on your live Upstox account. Double-check everything before confirming.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-family:var(--mono); font-size:12px;">
+        <label>Quantity (shares)
+          <input id="ordQty" type="number" min="1" value="1" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+        </label>
+        <label>Product
+          <select id="ordProduct" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+            <option value="I">Intraday (MIS)</option>
+            <option value="D">Delivery (CNC)</option>
+          </select>
+        </label>
+        <label>Order type
+          <select id="ordType" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+            <option value="MARKET">Market</option>
+            <option value="LIMIT">Limit</option>
+          </select>
+        </label>
+        <label id="ordPriceWrap" style="display:none;">Limit price
+          <input id="ordPrice" type="number" step="0.05" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="ordConfirmChk" style="accent-color:var(--bear);">
+          I understand this is a real, live order
+        </label>
+      </div>
+      <div id="ordStatus" style="font-size:11.5px; color:var(--sub); margin-top:10px; font-family:var(--mono);"></div>
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <button id="ordCancelBtn" style="flex:1;">Cancel</button>
+        <button id="ordSubmitBtn" class="primary" style="flex:1;">Place Order</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tabTrading" style="display:none;">
+
+  <div class="banner" style="border-left-color:#5b8dee;">
+    <b>Trading &amp; Ledger:</b> place real Buy/Sell orders from the Screener tab's watchlist rows, then track today's positions and executed trades here. All figures come directly from your live Upstox account.
+  </div>
+
+  <div class="banner" style="border-left-color:var(--bull);">
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:8px;">
+      <input type="checkbox" id="sandboxModeChk" style="accent-color:var(--bull); width:16px; height:16px;">
+      <b style="color:var(--bull);">Sandbox / Demo mode</b> — practice orders with fake money, no static IP needed
+    </label>
+    <div id="sandboxTokenRow" style="display:none; margin-top:6px;">
+      <input id="sandboxTokenIn" type="password" placeholder="Paste Upstox SANDBOX access token…" autocomplete="off" style="width:320px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; font-family:var(--mono); font-size:12px;">
+      <div style="margin-top:6px; font-size:11.5px; color:var(--sub);">
+        Get this from a separate <b>Sandbox App</b> in your Upstox Developer dashboard (different from your live app/token) — go to developer console → create Sandbox App → generate token.
+      </div>
+    </div>
+  </div>
+
+  <div class="oc-panel" style="margin-top:30px;">
+    <h2 style="font-size:16px; margin:0 0 12px; font-weight:800;">Ledger — Positions &amp; Trade Book</h2>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <button class="primary" id="ledgerRefreshBtn">Refresh ledger</button>
+      <span class="status-line" id="ledgerStatus"></span>
+    </div>
+    <div style="margin-bottom:8px; font-family:var(--mono); font-size:13px;" id="ledgerTotals"></div>
+    <table style="margin-bottom:22px;">
+      <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Price</th><th>LTP</th><th>P&amp;L</th><th>Product</th></tr></thead>
+      <tbody id="posTbody"><tr><td colspan="6" class="empty">Click "Refresh ledger" to load positions.</td></tr></tbody>
+    </table>
+    <table>
+      <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Order ID</th></tr></thead>
+      <tbody id="tradeTbody"><tr><td colspan="6" class="empty">Click "Refresh ledger" to load today's trades.</td></tr></tbody>
+    </table>
+  </div>
+
+  </div>
+  <!-- end #tabTrading -->
+
+  <div id="tabCrypto" style="display:none;">
+
+    <div class="topbar" style="border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:20px;">
+      <div>
+        <div class="brand-eyebrow" style="color:#f7931a;">Delta Exchange India</div>
+        <h1 style="font-size:20px;">Crypto Account</h1>
+        <div class="sub">Separate account, separate API keys — kept fully independent from your Upstox connection above.</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+        <div class="connect-row">
+          <select id="deltaEnvSel" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; font-family:var(--mono); font-size:12px;">
+            <option value="live">Live (real funds)</option>
+            <option value="testnet">Testnet (fake funds — demo)</option>
+          </select>
+          <input id="deltaApiKeyIn" type="text" placeholder="Delta API Key" autocomplete="off" style="width:180px;">
+          <input id="deltaApiSecretIn" type="password" placeholder="Delta API Secret" autocomplete="off" style="width:180px;">
+          <button class="primary" id="deltaConnectBtn">Connect</button>
+        </div>
+        <div class="status-line"><span class="status-dot off" id="deltaStatusDot"></span><span id="deltaStatusText">Not connected — credentials stay in this browser session only</span></div>
+      </div>
+    </div>
+
+    <div class="banner" style="border-left-color:#f7931a;">
+      <b>How this works:</b> Generate an API key + secret from your Delta Exchange India account (Account → API Keys). Requests are signed locally in your browser using HMAC-SHA256 — your secret is never sent anywhere except used to compute a signature, and it's held in memory only for this session. Pick <b>Testnet</b> above to practice with fake funds first, same as we did with Upstox Sandbox.
+    </div>
+
+    <div class="toolbar">
+      <h2 style="font-size:16px; margin:0; font-weight:800;">Watchlist</h2>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <label class="status-line" style="gap:6px;">
+          Timeframe
+          <select id="deltaTimeframeSel" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:11px; padding:5px 6px;">
+            <option value="1d">Daily</option>
+            <option value="15m">15 minute</option>
+          </select>
+        </label>
+        <div class="addrow">
+          <input id="deltaSymIn" placeholder="SYMBOL e.g. BTCUSD">
+          <button id="deltaAddBtn">+ Add</button>
+        </div>
+      </div>
+    </div>
+    <table style="margin-bottom:30px;">
+      <thead><tr><th>Symbol</th><th>Price</th><th>24h Change</th><th>EMA 9</th><th>EMA 21</th><th>EMA 200</th><th>9/21</th><th>9/200</th><th>21/200</th><th>Trade</th><th></th></tr></thead>
+      <tbody id="deltaTbody"></tbody>
+    </table>
+
+    <div id="deltaOrderOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center;">
+      <div style="background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:24px; width:360px; max-width:90vw;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <h3 id="deltaOrderTitle" style="margin:0; font-size:16px; font-weight:800;">Buy BTCUSD</h3>
+          <button id="deltaOrderModalClose" style="background:none; border:none; color:var(--sub); font-size:18px; padding:2px 6px;">✕</button>
+        </div>
+        <div class="banner" style="border-left-color:var(--bear); margin:12px 0; font-size:11.5px;">
+          ⚠️ This places an order on your <b>Delta Exchange</b> account (real funds unless Testnet is selected above).
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; font-family:var(--mono); font-size:12px;">
+          <label>Size (contracts)
+            <input id="deltaOrdQty" type="number" min="1" value="1" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+          </label>
+          <label>Order type
+            <select id="deltaOrdType" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+              <option value="market_order">Market</option>
+              <option value="limit_order">Limit</option>
+            </select>
+          </label>
+          <label id="deltaOrdPriceWrap" style="display:none;">Limit price
+            <input id="deltaOrdPrice" type="number" step="0.5" style="width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:4px;">
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="deltaOrdConfirmChk" style="accent-color:var(--bear);">
+            I understand this places a real order
+          </label>
+        </div>
+        <div id="deltaOrdStatus" style="font-size:11.5px; color:var(--sub); margin-top:10px; font-family:var(--mono);"></div>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button id="deltaOrdCancelBtn" style="flex:1;">Cancel</button>
+          <button id="deltaOrdSubmitBtn" class="primary" style="flex:1;">Place Order</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="oc-panel">
+      <h2 style="font-size:16px; margin:0 0 12px; font-weight:800;">Delta Ledger — Balances &amp; Positions</h2>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <button class="primary" id="deltaLedgerRefreshBtn">Refresh</button>
+      </div>
+      <table style="margin-bottom:22px;">
+        <thead><tr><th>Asset</th><th>Balance</th><th>Available</th></tr></thead>
+        <tbody id="deltaBalTbody"><tr><td colspan="3" class="empty">Connect and click Refresh to load balances.</td></tr></tbody>
+      </table>
+      <table>
+        <thead><tr><th>Symbol</th><th>Size</th><th>Entry Price</th><th>Unrealized P&amp;L</th><th>Type</th></tr></thead>
+        <tbody id="deltaPosTbody"><tr><td colspan="5" class="empty">Connect and click Refresh to load positions.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="oc-panel">
+      <h2 style="font-size:16px; margin:0 0 12px; font-weight:800;">🤖 Auto-Trade Bot</h2>
+      <div class="banner" style="border-left-color:var(--watch);">
+        <b>Your strategy:</b> On <b>9/200 EMA crossover</b> → open 1 contract (buy if bullish cross, sell/short if bearish cross). On <b>21/200 EMA crossover</b> → open an <i>additional</i> 1 contract, same rules. Target/stoploss are set in <b>₹ (INR)</b> below and converted to the equivalent USD price move (1:1 risk-reward), since Delta quotes prices in USD. Market orders. Runs only while this tab stays open.
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:14px 0;">
+        <span class="status-line" style="gap:10px;">
+          Trade on:
+          <label style="gap:4px; cursor:pointer; display:inline-flex; align-items:center;"><input type="checkbox" id="botSymBTC" checked style="accent-color:var(--watch);"> BTCUSD</label>
+          <label style="gap:4px; cursor:pointer; display:inline-flex; align-items:center;"><input type="checkbox" id="botSymXAUT" checked style="accent-color:var(--watch);"> XAUTUSD</label>
+        </span>
+        <label class="status-line" style="gap:6px;">
+          BTCUSD Target/SL ($ points)
+          <input id="botUsdBTC" type="number" value="1000" step="100" style="width:100px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <label class="status-line" style="gap:6px;">
+          XAUTUSD Target/SL (₹)
+          <input id="botInrXAUT" type="number" value="1000" step="100" style="width:100px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <label class="status-line" style="gap:6px;">
+          USD/INR rate
+          <input id="botUsdInrRate" type="number" value="83" step="0.1" style="width:70px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <button class="primary" id="botArmBtn">Arm Bot</button>
+        <span class="status-line"><span class="status-dot off" id="botStatusDot"></span><span id="botStatusText">Bot is OFF</span></span>
+      </div>
+      <div class="status-line" id="botInrPreview" style="font-family:var(--mono); font-size:11px; margin-bottom:10px;"></div>
+
+      <div class="banner" style="border-left-color:#5b8dee; margin-bottom:14px;">
+        <b>📱 Get trade alerts on your phone (Telegram):</b> browser notifications only appear on the device this dashboard is open on — for real mobile alerts, connect a Telegram bot instead.<br>
+        1) Message <a href="https://t.me/BotFather" target="_blank" style="color:var(--sub);">@BotFather</a> on Telegram → create a bot → copy the token.<br>
+        2) Message <a href="https://t.me/userinfobot" target="_blank" style="color:var(--sub);">@userinfobot</a> to get your Chat ID.<br>
+        3) Paste both below and click Test — then every trade open/close pings your phone directly.
+        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+          <input id="tgBotToken" type="password" placeholder="Telegram Bot Token" style="flex:1; min-width:180px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font-family:var(--mono); font-size:12px;">
+          <input id="tgChatId" type="text" placeholder="Telegram Chat ID" style="width:140px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font-family:var(--mono); font-size:12px;">
+          <button id="tgTestBtn">Test</button>
+        </div>
+        <div class="status-line" id="tgStatus" style="margin-top:6px;"></div>
+      </div>
+
+      <h3 style="font-size:13px; margin:16px 0 8px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em;">Open Positions</h3>
+      <table style="margin-bottom:22px;">
+        <thead><tr><th>Symbol</th><th>Leg</th><th>Side</th><th>Entry</th><th>Target</th><th>Stoploss</th><th>Live P&amp;L</th><th>Status</th></tr></thead>
+        <tbody id="botPosTbody"><tr><td colspan="8" class="empty">No open bot positions.</td></tr></tbody>
+      </table>
+
+      <h3 style="font-size:13px; margin:16px 0 8px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em;">Trade Log</h3>
+      <table>
+        <thead><tr><th>Symbol</th><th>Opened</th><th>Closed</th><th>Leg</th><th>Side</th><th>Entry</th><th>Exit</th><th>Reason</th><th>P&amp;L</th></tr></thead>
+        <tbody id="botLogTbody"><tr><td colspan="9" class="empty">No trades yet.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="oc-panel" style="margin-top:26px;">
+      <h2 style="font-size:16px; margin:0 0 12px; font-weight:800;">📈 Strategy Backtest</h2>
+      <div class="banner" style="border-left-color:#5b8dee;">
+        Simulates the exact same rules against historical candles (using each bar's high/low to detect target/stoploss hits) — no real orders, completely safe. Uses the timeframe selected in the Watchlist above.
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin:14px 0; flex-wrap:wrap;">
+        <label class="status-line" style="gap:6px;">
+          Symbol
+          <select id="btSymbolSel" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+            <option value="BTCUSD">BTCUSD</option>
+            <option value="XAUTUSD">XAUTUSD (Gold)</option>
+          </select>
+        </label>
+        <label class="status-line" style="gap:6px;">
+          From
+          <input type="date" id="btStartDate" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <label class="status-line" style="gap:6px;">
+          To
+          <input type="date" id="btEndDate" style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <label class="status-line" style="gap:6px;">
+          BTCUSD Target/SL ($ points)
+          <input id="btUsdBTC" type="number" value="1000" step="100" style="width:100px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <label class="status-line" style="gap:6px;">
+          XAUTUSD Target/SL (₹)
+          <input id="btInrXAUT" type="number" value="1000" step="100" style="width:100px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <label class="status-line" style="gap:6px;">
+          USD/INR rate
+          <input id="btUsdInrRate" type="number" value="83" step="0.1" style="width:70px; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:12px; padding:6px 8px;">
+        </label>
+        <button class="primary" id="btRunBtn">Run Backtest</button>
+        <span class="status-line" id="btStatus"></span>
+      </div>
+      <div id="btSummary" style="font-family:var(--mono); font-size:13px; margin-bottom:14px; display:none;"></div>
+      <canvas id="btEquityCanvas" width="900" height="180" style="width:100%; height:180px; display:none; margin-bottom:18px; background:var(--panel-2); border-radius:8px; border:1px solid var(--line);"></canvas>
+      <table>
+        <thead><tr><th>Opened</th><th>Leg</th><th>Side</th><th>Entry</th><th>Exit</th><th>Reason</th><th>P&amp;L ($)</th></tr></thead>
+        <tbody id="btLogTbody"><tr><td colspan="7" class="empty">Click "Run Backtest" to simulate.</td></tr></tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- end #tabCrypto -->
+
+  <div class="foot">
+    Data: Upstox Historical Candle API v3 (daily candles, ~1yr lookback) + Instrument Search API (live instrument key &amp; lot size resolution) + Put/Call Option Chain API + Portfolio/Order/Trade APIs. EMA seeded via SMA of first N closes · "Crossed today" = fast EMA flipped sides of slow EMA on the most recent close vs the prior close.<br>
+    Lot size shown is from the nearest-expiry futures contract for that underlying. This is a technical screener and order-placement tool, not investment advice — every order is your own decision and responsibility.
+  </div>
+
+<script>
+// Starter watchlist — resolved live via Instrument Search API on connect (no hardcoded keys)
+const DEFAULT_SYMBOLS = [
+  'RELIANCE','TCS','INFY','HDFCBANK','ICICIBANK','SBIN','ITC','LT','AXISBANK','KOTAKBANK',
+  'HINDUNILVR','BHARTIARTL','BAJFINANCE','MARUTI','ASIANPAINT','TATAMOTORS','TMPV','TATASTEEL','WIPRO','SUNPHARMA','ONGC'
+];
+
+// Full NSE F&O underlyings list (~175 stocks, excludes index futures like NIFTY/BANKNIFTY)
+const FULL_FO_SYMBOLS = [
+  'ACC','APOLLOTYRE','ASHOKLEY','ASIANPAINT','ATUL','BALKRISIND','BATAINDIA','BERGEPAINT','BHARATFORG','ABBOTINDIA',
+  'BRITANNIA','EXIDEIND','CIPLA','COLPAL','COROMANDEL','DEEPAKNTR','EICHERMOT','ESCORTS','NESTLEIND','GNFC',
+  'AMBUJACEM','GRASIM','HEROMOTOCO','ABB','HINDALCO','HINDUNILVR','INDIACEM','INDHOTEL','ITC','CUMMINSIND',
+  'TRENT','LT','RAMCOCEM','M&M','MFSL','BOSCHLTD','MRF','RELIANCE','VEDL','SHREECEM',
+  'SRF','SIEMENS','TATACHEM','TATAPOWER','TATACONSUM','TATASTEEL','VOLTAS','WIPRO','APOLLOHOSP','DRREDDY',
+  'TITAN','CANFINHOME','SBIN','SHRIRAMFIN','CHOLAFIN','BALRAMCHIN','BPCL','TATACOMM','BEL','SAIL',
+  'NATIONALUM','HINDPETRO','BHEL','KOTAKBANK','AARTIIND','UPL','PIIND','INFY','MOTHERSON','LUPIN',
+  'CHAMBLFERT','ZEEL','PIDILITIND','HAVELLS','MPHASIS','DABUR','TORNTPHARM','IPCALAB','FEDERALBNK','BAJFINANCE',
+  'HINDCOPPER','ADANIENT','LICHSGFIN','SUNPHARMA','AUROPHARMA','JSWSTEEL','HDFCBANK','TCS','ICICIBANK','POWERGRID',
+  'BANKBARODA','CANBK','MARUTI','INDUSINDBK','AXISBANK','HCLTECH','RBLBANK','ONGC','MANAPPURAM','DLF',
+  'CUB','PNB','TVSMOTOR','NTPC','IOC','COALINDIA','HAL','NMDC','PFC','GAIL',
+  'PAGEIND','MARICO','CONCOR','GRANULES','OFSS','MGL','JUBLFOOD','PVRINOX','BIOCON','SUNTV',
+  'BHARTIARTL','GODREJPROP','BSOFT','JKCEMENT','TECHM','RECLTD','PERSISTENT','NAUKRI','ALKEM','PETRONET',
+  'SBICARD','JINDALSTEL','GLENMARK','IGL','ZYDUSLIFE','DIVISLAB','HDFCAMC','ADANIPORTS','GODREJCP','HDFCLIFE',
+  'ICICIPRULI','SBILIFE','ICICIGI','IDEA','UBL','IRCTC','NAVINFLUOR','MUTHOOTFIN','ULTRACEMCO','COFORGE',
+  'MCX','SYNGENE','POLYCAB','ASTRAL','BAJAJ-AUTO','BAJAJFINSV','INDIGO','AUBANK','DIXON','OBEROIRLTY',
+  'INDUSTOWER','ABCAPITAL','ABFRL','LALPATHLAB','GUJGASLTD','LTTS','LAURUSLABS','IDFCFIRSTB','INTELLECT','METROPOLIS',
+  'CROMPTON','BANDHANBNK','INDIAMART','DALBHARAT','IEX','TMPV'
+];
+
+// Index instrument keys are stable Upstox constants — no resolution needed
+const INDEX_DEFS = [
+  {symbol:'NIFTY 50',    key:'NSE_INDEX|Nifty 50'},
+  {symbol:'NIFTY BANK',  key:'NSE_INDEX|Nifty Bank'},
+  {symbol:'SENSEX',      key:'BSE_INDEX|SENSEX'},
+];
+
+// Approximate sector classification for common F&O stocks (used for Sector Performance box)
+const SECTOR_MAP = {
+  'HDFCBANK':'Banking','ICICIBANK':'Banking','SBIN':'Banking','KOTAKBANK':'Banking','AXISBANK':'Banking',
+  'INDUSINDBK':'Banking','BANKBARODA':'Banking','CANBK':'Banking','PNB':'Banking','FEDERALBNK':'Banking',
+  'IDFCFIRSTB':'Banking','RBLBANK':'Banking','AUBANK':'Banking','BANDHANBNK':'Banking','CUB':'Banking',
+  'TCS':'IT','INFY':'IT','WIPRO':'IT','HCLTECH':'IT','TECHM':'IT','LTTS':'IT','MPHASIS':'IT',
+  'PERSISTENT':'IT','COFORGE':'IT','OFSS':'IT','INTELLECT':'IT','BSOFT':'IT','NAUKRI':'IT',
+  'MARUTI':'Auto','TATAMOTORS':'Auto','TMPV':'Auto','M&M':'Auto','BAJAJ-AUTO':'Auto','HEROMOTOCO':'Auto',
+  'EICHERMOT':'Auto','TVSMOTOR':'Auto','ASHOKLEY':'Auto','MOTHERSON':'Auto','BOSCHLTD':'Auto','MRF':'Auto',
+  'BHARATFORG':'Auto','BALKRISIND':'Auto','APOLLOTYRE':'Auto','EXIDEIND':'Auto',
+  'SUNPHARMA':'Pharma','DRREDDY':'Pharma','CIPLA':'Pharma','DIVISLAB':'Pharma','AUROPHARMA':'Pharma',
+  'LUPIN':'Pharma','ALKEM':'Pharma','TORNTPHARM':'Pharma','ZYDUSLIFE':'Pharma','GLENMARK':'Pharma',
+  'BIOCON':'Pharma','LAURUSLABS':'Pharma','ABBOTINDIA':'Pharma','IPCALAB':'Pharma','GRANULES':'Pharma',
+  'HINDUNILVR':'FMCG','ITC':'FMCG','NESTLEIND':'FMCG','BRITANNIA':'FMCG','DABUR':'FMCG','MARICO':'FMCG',
+  'COLPAL':'FMCG','TATACONSUM':'FMCG','UBL':'FMCG','GODREJCP':'FMCG','JUBLFOOD':'FMCG','PAGEIND':'FMCG',
+  'TATASTEEL':'Metals','JSWSTEEL':'Metals','HINDALCO':'Metals','VEDL':'Metals','SAIL':'Metals',
+  'NATIONALUM':'Metals','HINDCOPPER':'Metals','NMDC':'Metals','JINDALSTEL':'Metals',
+  'RELIANCE':'Energy','ONGC':'Energy','BPCL':'Energy','IOC':'Energy','HINDPETRO':'Energy','GAIL':'Energy',
+  'PETRONET':'Energy','MGL':'Energy','IGL':'Energy','ADANIENT':'Energy','ADANIPORTS':'Infra',
+  'LT':'Infra','ULTRACEMCO':'Infra','GRASIM':'Infra','AMBUJACEM':'Infra','SHREECEM':'Infra',
+  'RAMCOCEM':'Infra','JKCEMENT':'Infra','DALBHARAT':'Infra','ACC':'Infra','CONCOR':'Infra',
+  'NTPC':'Power','POWERGRID':'Power','TATAPOWER':'Power','COALINDIA':'Power','PFC':'Power','RECLTD':'Power',
+  'BHARTIARTL':'Telecom','IDEA':'Telecom','INDUSTOWER':'Telecom',
+  'BAJFINANCE':'Financial Services','BAJAJFINSV':'Financial Services','SBICARD':'Financial Services',
+  'HDFCLIFE':'Financial Services','SBILIFE':'Financial Services','ICICIPRULI':'Financial Services',
+  'ICICIGI':'Financial Services','HDFCAMC':'Financial Services','MUTHOOTFIN':'Financial Services',
+  'CHOLAFIN':'Financial Services','SHRIRAMFIN':'Financial Services','LICHSGFIN':'Financial Services',
+  'MFSL':'Financial Services','MANAPPURAM':'Financial Services','PIIND':'Chemicals','UPL':'Chemicals',
+  'SRF':'Chemicals','PIDILITIND':'Chemicals','AARTIIND':'Chemicals','DEEPAKNTR':'Chemicals',
+  'TATACHEM':'Chemicals','NAVINFLUOR':'Chemicals','ATUL':'Chemicals','CHAMBLFERT':'Chemicals','GNFC':'Chemicals',
+  'ASIANPAINT':'Consumer','BERGEPAINT':'Consumer','HAVELLS':'Consumer','VOLTAS':'Consumer','TITAN':'Consumer',
+  'CROMPTON':'Consumer','DIXON':'Consumer','BATAINDIA':'Consumer','TRENT':'Consumer','INDIAMART':'Consumer',
+  'DLF':'Realty','GODREJPROP':'Realty','OBEROIRLTY':'Realty',
+  'ZEEL':'Media','SUNTV':'Media','PVRINOX':'Media',
+  'APOLLOHOSP':'Healthcare','LALPATHLAB':'Healthcare','METROPOLIS':'Healthcare','SYNGENE':'Healthcare',
+  'INDHOTEL':'Consumer','IRCTC':'Consumer','INDIGO':'Aviation','HAL':'Defence','BEL':'Defence',
+  'ABCAPITAL':'Financial Services','ABFRL':'Consumer','IEX':'Power',
+  'MCX':'Financial Services','SIEMENS':'Capital Goods','ABB':'Capital Goods','CUMMINSIND':'Capital Goods',
+  'BHEL':'Capital Goods','ASTRAL':'Consumer','POLYCAB':'Capital Goods','GUJGASLTD':'Energy',
+};
+
+// Approximate constituents making up ~75% of NIFTY 50's free-float market-cap weight,
+// ordered roughly by weight (largest first). Static/illustrative — actual weights drift over time.
+const NIFTY_75PCT_LIST = [
+  'HDFCBANK','RELIANCE','ICICIBANK','INFY','TCS','BHARTIARTL','ITC','LT','KOTAKBANK','AXISBANK',
+  'SBIN','BAJFINANCE','HINDUNILVR','ASIANPAINT','MARUTI','SUNPHARMA','TITAN','TATAMOTORS','ULTRACEMCO','NTPC'
+];
+
+let state = {
+  token: '',
+  stocks: [
+    ...INDEX_DEFS.map(d => ({symbol:d.symbol, key:d.key, lotSize:null, isIndex:true, row:null})),
+    ...DEFAULT_SYMBOLS.map(sym => ({symbol:sym, key:null, lotSize:null, row:null})),
+  ],
+  filter: 'all',
+  sortKey: 'symbol',
+  sortDir: 1,
+  liveMap: {},
+  resolveCache: {},
+};
+
+const tbody = document.getElementById('tbody');
+const tokenIn = document.getElementById('tokenIn');
+const connectBtn = document.getElementById('connectBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const loadFullBtn = document.getElementById('loadFullBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const lastUpdated = document.getElementById('lastUpdated');
+const progressWrap = document.getElementById('progressWrap');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function fmtDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function showProgress(text, pct){ progressWrap.classList.add('show'); progressText.textContent = text; progressFill.style.width = pct+'%'; }
+function hideProgress(){ progressWrap.classList.remove('show'); }
+
+// --- Live instrument resolution (symbol -> instrument_key + lot_size) ---
+async function searchInstruments(query){
+  const url = `https://api.upstox.com/v2/instruments/search?query=${encodeURIComponent(query)}&exchanges=NSE&segments=EQ,FO&instrument_types=EQ,FUT&records=20`;
+  const res = await fetch(url, {
+    headers: { 'Accept':'application/json', 'Authorization':'Bearer ' + state.token }
+  });
+  if(!res.ok){
+    const txt = await res.text().catch(()=> '');
+    throw new Error(`Search HTTP ${res.status}${txt ? ' — '+txt.slice(0,100) : ''}`);
+  }
+  const data = await res.json();
+  if(data.status !== 'success') throw new Error('Search API error');
+  return data.data || [];
+}
+
+async function resolveSymbol(symbol){
+  if(state.resolveCache[symbol]) return state.resolveCache[symbol];
+
+  const variants = [symbol];
+  if(symbol.includes('&')){
+    variants.push(symbol.replace(/&/g, ' '));
+    variants.push(symbol.replace(/&/g, ''));
+    variants.push(symbol.split('&')[0]);
+  }
+
+  let items = [];
+  let lastFetchError = null;
+  for(const v of variants){
+    try{
+      const r = await searchInstruments(v);
+      items = items.concat(r);
+      if(items.some(i => i.instrument_type==='EQ' && i.segment==='NSE_EQ' && i.trading_symbol===symbol)) break;
+    }catch(e){ lastFetchError = e; }
+  }
+
+  // If every single search call failed (network/HTTP error), surface that real error
+  if(items.length === 0 && lastFetchError) throw lastFetchError;
+
+  let eq = items.find(i => i.instrument_type==='EQ' && i.segment==='NSE_EQ' && i.trading_symbol===symbol);
+  if(!eq) eq = items.find(i => i.instrument_type==='EQ' && i.segment==='NSE_EQ' && i.trading_symbol?.trim().toUpperCase()===symbol.trim().toUpperCase());
+  if(!eq) throw new Error(`No NSE equity match for "${symbol}"`);
+
+  const futs = items.filter(i => i.instrument_type==='FUT' && i.segment==='NSE_FO' && i.underlying_symbol===symbol);
+  futs.sort((a,b)=> new Date(a.expiry) - new Date(b.expiry));
+  const result = { key: eq.instrument_key, lotSize: futs.length ? futs[0].lot_size : null };
+  state.resolveCache[symbol] = result;
+  return result;
+}
+
+async function ensureResolved(stock){
+  if(stock.key) return; // indices come pre-resolved; stocks resolve lazily
+  const r = await resolveSymbol(stock.symbol);
+  stock.key = r.key;
+  stock.lotSize = r.lotSize;
+}
+
+function ema(closes, period){
+  const out = new Array(closes.length).fill(null);
+  if(closes.length < period) return out;
+  const k = 2/(period+1);
+  let sma = 0;
+  for(let i=0;i<period;i++) sma += closes[i];
+  sma /= period;
+  out[period-1] = sma;
+  for(let i=period;i<closes.length;i++){
+    out[i] = closes[i]*k + out[i-1]*(1-k);
+  }
+  return out;
+}
+
+function classifyPair(fastArr, slowArr){
+  let lastI = -1;
+  for(let i=fastArr.length-1;i>=0;i--){
+    if(fastArr[i]!=null && slowArr[i]!=null){ lastI = i; break; }
+  }
+  if(lastI < 1) return {status:'na'};
+  const state_now = fastArr[lastI] > slowArr[lastI] ? 'bull' : 'bear';
+  let daysAgo = null;
+  for(let i=lastI;i>=1;i--){
+    if(fastArr[i]==null||slowArr[i]==null||fastArr[i-1]==null||slowArr[i-1]==null) break;
+    const now = fastArr[i] > slowArr[i] ? 'bull' : 'bear';
+    const prev = fastArr[i-1] > slowArr[i-1] ? 'bull' : 'bear';
+    if(now !== prev){ daysAgo = lastI - i; break; }
+  }
+  return {status: state_now, daysAgo};
+}
+
+async function fetchCandles(instrumentKey){
+  const tf = document.getElementById('timeframeSel').value;
+
+  if(tf === '15m'){
+    // 15-min candles have a short max date-range per request, so fetch in small
+    // chunks working backward until we have enough candles for a 200-period EMA.
+    let candles = [];
+    let windowEnd = new Date();
+    const CHUNK_DAYS = 20;
+    const MAX_CHUNKS = 8; // ~160 calendar days back, safely enough trading days
+    for(let i=0; i<MAX_CHUNKS && candles.length < 260; i++){
+      const to = new Date(windowEnd);
+      const from = new Date(windowEnd);
+      from.setDate(from.getDate() - CHUNK_DAYS);
+      const url = `https://api.upstox.com/v3/historical-candle/${encodeURIComponent(instrumentKey)}/minutes/15/${fmtDate(to)}/${fmtDate(from)}`;
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + state.token }
+      });
+      if(!res.ok){
+        const txt = await res.text().catch(()=> '');
+        throw new Error(`HTTP ${res.status}${txt ? ' — '+txt.slice(0,120) : ''}`);
+      }
+      const data = await res.json();
+      if(data.status !== 'success') throw new Error('API returned an error');
+      const chunk = data.data.candles || [];
+      candles = candles.concat(chunk);
+      windowEnd = from; // move window back further for next chunk
+      if(chunk.length === 0 && i > 2) break; // no more data further back
+      await new Promise(r=>setTimeout(r, 100));
+    }
+
+    // Merge in today's still-forming candles from the intraday endpoint
+    try{
+      const iUrl = `https://api.upstox.com/v3/historical-candle/intraday/${encodeURIComponent(instrumentKey)}/minutes/15`;
+      const ires = await fetch(iUrl, { headers: { 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+      if(ires.ok){
+        const idata = await ires.json();
+        if(idata.status === 'success'){
+          const iCandles = idata.data.candles || [];
+          const seen = new Set(candles.map(c=>c[0]));
+          iCandles.forEach(c=>{ if(!seen.has(c[0])) candles.push(c); });
+        }
+      }
+    }catch(_e){ /* non-fatal */ }
+
+    candles.sort((a,b)=> new Date(a[0]) - new Date(b[0]));
+    return candles;
+  }
+
+  // Daily timeframe: a single request comfortably covers ~14 months
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 420);
+  const url = `https://api.upstox.com/v3/historical-candle/${encodeURIComponent(instrumentKey)}/days/1/${fmtDate(to)}/${fmtDate(from)}`;
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + state.token }
+  });
+  if(!res.ok){
+    const txt = await res.text().catch(()=> '');
+    throw new Error(`HTTP ${res.status}${txt ? ' — '+txt.slice(0,120) : ''}`);
+  }
+  const data = await res.json();
+  if(data.status !== 'success') throw new Error('API returned an error');
+  let candles = data.data.candles || [];
+  candles.sort((a,b)=> new Date(a[0]) - new Date(b[0]));
+  return candles;
+}
+
+async function fetchLiveLtpBatch(keys){
+  if(keys.length === 0) return {};
+  const chunks = [];
+  for(let i=0;i<keys.length;i+=400) chunks.push(keys.slice(i,i+400));
+  const merged = {};
+  for(const chunk of chunks){
+    const url = `https://api.upstox.com/v3/market-quote/ltp?instrument_key=${encodeURIComponent(chunk.join(','))}`;
+    const res = await fetch(url, {
+      headers: { 'Accept':'application/json', 'Authorization':'Bearer ' + state.token }
+    });
+    if(!res.ok) throw new Error(`LTP HTTP ${res.status}`);
+    const data = await res.json();
+    if(data.status !== 'success') throw new Error('LTP API returned an error');
+    Object.values(data.data || {}).forEach(v=>{
+      if(v && v.instrument_token) merged[v.instrument_token] = v.last_price;
+    });
+  }
+  return merged;
+}
+
+function drawSpark(canvas, closes, e21, e200){
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = closes.length;
+  if(n < 2) return;
+  const start = Math.max(0, n-120);
+  const slice = (arr)=> arr.slice(start);
+  const c = slice(closes), e2 = slice(e21), e20 = slice(e200);
+  const all = c.concat(e2.filter(v=>v!=null)).concat(e20.filter(v=>v!=null));
+  const min = Math.min(...all), max = Math.max(...all);
+  const range = (max-min) || 1;
+  const x = i => (i/(c.length-1)) * (w-4) + 2;
+  const y = v => h - 4 - ((v-min)/range) * (h-8);
+  function line(arr, color, width){
+    ctx.beginPath();
+    let started = false;
+    arr.forEach((v,i)=>{
+      if(v==null) return;
+      if(!started){ ctx.moveTo(x(i), y(v)); started = true; }
+      else ctx.lineTo(x(i), y(v));
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  }
+  line(e20, '#e8a33d', 1.3);
+  line(e2, '#5b8dee', 1.1);
+  line(c, '#c7cdd8', 1.4);
+}
+
+function badgeHTML(res){
+  if(res.status === 'na') return `<span class="badge na">n/a</span>`;
+  const cls = res.status === 'bull' ? 'bull' : 'bear';
+  const arrow = res.status === 'bull' ? '▲' : '▼';
+  let label = res.status === 'bull' ? 'Bullish' : 'Bearish';
+  if(res.daysAgo === 0) label = (res.status==='bull'?'Crossed up today':'Crossed down today');
+  else if(res.daysAgo != null && res.daysAgo <= 3) label += ` · ${res.daysAgo}d ago`;
+  return `<span class="badge ${cls}"><span class="arrow">${arrow}</span>${label}</span>`;
+}
+
+async function loadOne(stock){
+  const tr = stock.row;
+  if(!tr) return;
+  tr.querySelector('.ltp').innerHTML = `<span class="loading-cell">loading…</span>`;
+  try{
+    await ensureResolved(stock);
+    tr.querySelector('.lot').textContent = stock.isIndex ? 'Index' : (stock.lotSize != null ? stock.lotSize : '—');
+
+    const candles = await fetchCandles(stock.key);
+    if(candles.length < 30) throw new Error('Not enough candle history returned');
+    const closes = candles.map(c => c[4]);
+    const latestVolume = candles[candles.length-1][5];
+    const e9 = ema(closes, 9);
+    const e21 = ema(closes, 21);
+    const e200 = ema(closes, 200);
+    const lastClose = closes[closes.length-1];
+    // % change must always compare against the previous trading DAY's close (standard market convention),
+    // not the previous intraday candle — otherwise 15-min timeframe shows a tiny/wrong % vs what brokers quote.
+    const todayStr = fmtDate(new Date());
+    let prevClose = closes[closes.length-2]; // fallback (correct for Daily timeframe)
+    for(let i=candles.length-1; i>=0; i--){
+      const candleDateStr = fmtDate(new Date(candles[i][0]));
+      if(candleDateStr !== todayStr){ prevClose = candles[i][4]; break; }
+    }
+    const ltp = (state.liveMap && state.liveMap[stock.key] != null) ? state.liveMap[stock.key] : lastClose;
+    const chgPct = ((ltp-prevClose)/prevClose*100).toFixed(2);
+    const isLive = state.liveMap && state.liveMap[stock.key] != null;
+
+    stock.data = {closes, e9, e21, e200, prevDayClose: prevClose, volume: latestVolume, chgPct: parseFloat(chgPct), ltp,
+      c921: classifyPair(e9,e21), c9200: classifyPair(e9,e200), c21200: classifyPair(e21,e200)};
+
+    tr.querySelector('.ltp').innerHTML = `₹${ltp.toFixed(2)} ${isLive ? '<span title="Live LTP" style="color:var(--bull);font-size:9px;">●</span>' : '<span title="Last close (live LTP unavailable)" style="color:var(--sub);font-size:9px;">◌</span>'}<br><span class="chg ${chgPct>=0?'up':'down'}">${chgPct>=0?'+':''}${chgPct}%</span>`;
+    const last9 = e9[e9.length-1], last21 = e21[e21.length-1], last200 = e200[e200.length-1];
+    tr.querySelector('.ema9').textContent = last9 != null ? last9.toFixed(2) : '—';
+    tr.querySelector('.ema21').textContent = last21 != null ? last21.toFixed(2) : '—';
+    tr.querySelector('.ema200').textContent = last200 != null ? last200.toFixed(2) : '—';
+    const canvas = tr.querySelector('canvas');
+    drawSpark(canvas, closes, e21, e200);
+    tr.querySelector('.b921').innerHTML = badgeHTML(stock.data.c921);
+    tr.querySelector('.b9200').innerHTML = badgeHTML(stock.data.c9200);
+    tr.querySelector('.b21200').innerHTML = badgeHTML(stock.data.c21200);
+    stock.error = null;
+  }catch(e){
+    stock.error = e.message;
+    tr.querySelector('.ltp').innerHTML = `<span class="err" title="${e.message} — click to enter instrument key manually">${e.message}</span>`;
+    tr.querySelector('.ltp').querySelector('.err').onclick = ()=>{
+      const manual = prompt(`Auto-resolve failed for ${stock.symbol}.\nPaste the correct Upstox instrument_key manually (e.g. NSE_EQ|INE...):`);
+      if(manual && manual.trim()){
+        stock.key = manual.trim();
+        stock.error = null;
+        loadOne(stock);
+      }
+    };
+    tr.querySelector('.lot').textContent = stock.lotSize != null ? stock.lotSize : '—';
+    tr.querySelector('.ema9').textContent = '—';
+    tr.querySelector('.ema21').textContent = '—';
+    tr.querySelector('.ema200').textContent = '—';
+    tr.querySelector('.b921').innerHTML = `<span class="badge na" title="${e.message}">n/a</span>`;
+    tr.querySelector('.b9200').innerHTML = `<span class="badge na">n/a</span>`;
+    tr.querySelector('.b21200').innerHTML = `<span class="badge na">n/a</span>`;
+  }
+  applyFilter();
+}
+
+function renderRows(){
+  tbody.innerHTML = '';
+  if(state.stocks.length === 0){
+    tbody.innerHTML = `<tr><td colspan="12" class="empty">No stocks in your watchlist yet — add one above.</td></tr>`;
+    return;
+  }
+  state.stocks.forEach(stock=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="sym" style="cursor:pointer; text-decoration:underline; text-decoration-color:#2a3242; text-underline-offset:3px;" title="Click to view option chain">${stock.symbol}</td>
+      <td class="ltp">—</td>
+      <td class="lot">—</td>
+      <td class="ema9 ltp">—</td>
+      <td class="ema21 ltp">—</td>
+      <td class="ema200 ltp">—</td>
+      <td><canvas class="spark" width="160" height="40"></canvas></td>
+      <td class="b921"><span class="badge na">—</span></td>
+      <td class="b9200"><span class="badge na">—</span></td>
+      <td class="b21200"><span class="badge na">—</span></td>
+      <td>
+        <button class="buy-btn" style="background:var(--bull-dim); color:var(--bull); border-color:var(--bull-dim); padding:5px 9px; font-size:11px;">Buy</button>
+        <button class="sell-btn" style="background:var(--bear-dim); color:var(--bear); border-color:var(--bear-dim); padding:5px 9px; font-size:11px;">Sell</button>
+      </td>
+      <td><button class="rm" title="Remove">✕</button></td>
+    `;
+    tr.querySelector('.rm').onclick = ()=>{
+      state.stocks = state.stocks.filter(s=>s!==stock);
+      renderRows();
+    };
+    tr.querySelector('.sym').onclick = ()=> jumpToOptionChain(stock.symbol);
+    tr.querySelector('.buy-btn').onclick = ()=> openOrderModal(stock, 'BUY');
+    tr.querySelector('.sell-btn').onclick = ()=> openOrderModal(stock, 'SELL');
+    stock.row = tr;
+    tbody.appendChild(tr);
+  });
+  if(typeof populateOcUnderlying === 'function') populateOcUnderlying();
+}
+
+function applyFilter(){
+  state.stocks.forEach(s=>{
+    if(!s.row) return;
+    let show = true;
+    if(state.filter==='bull') show = [s.data?.c921, s.data?.c9200, s.data?.c21200].some(r=>r?.status==='bull');
+    if(state.filter==='bear') show = [s.data?.c921, s.data?.c9200, s.data?.c21200].some(r=>r?.status==='bear');
+    if(state.filter==='fresh') show = [s.data?.c921, s.data?.c9200, s.data?.c21200].some(r=>r?.daysAgo===0);
+    s.row.style.display = show ? '' : 'none';
+  });
+}
+
+document.getElementById('timeframeSel').onchange = ()=>{
+  if(state.token && !refreshBtn.disabled) refreshAll();
+};
+
+document.querySelectorAll('.filters button').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.filter = btn.dataset.f;
+    applyFilter();
+  };
+});
+
+document.getElementById('addBtn').onclick = ()=>{
+  const symIn = document.getElementById('symIn');
+  const symbol = symIn.value.trim().toUpperCase();
+  if(!symbol) return;
+  if(state.stocks.some(s=>s.symbol===symbol)){ symIn.value=''; return; }
+  const stock = {symbol, key:null, lotSize:null, row:null};
+  state.stocks.push(stock);
+  symIn.value='';
+  renderRows();
+  if(state.token) loadOne(stock);
+};
+
+const apiKeyIn = document.getElementById('apiKeyIn');
+const redirectIn = document.getElementById('redirectIn');
+const curlSnippet = document.getElementById('curlSnippet');
+
+function updateCurlSnippet(){
+  const key = apiKeyIn.value.trim() || 'YOUR_API_KEY';
+  const redirect = redirectIn.value.trim() || 'YOUR_REDIRECT_URI';
+  curlSnippet.textContent = `curl -X POST https://api.upstox.com/v2/login/authorization/token -H "accept: application/json" -H "Content-Type: application/x-www-form-urlencoded" -d "code=PASTE_CODE&client_id=${key}&client_secret=YOUR_API_SECRET&redirect_uri=${redirect}&grant_type=authorization_code"`;
+}
+apiKeyIn.oninput = updateCurlSnippet;
+redirectIn.oninput = updateCurlSnippet;
+
+document.getElementById('loginLinkBtn').onclick = ()=>{
+  const key = apiKeyIn.value.trim();
+  const redirect = redirectIn.value.trim();
+  if(!key || !redirect){ statusText.textContent = 'Fill API Key and Redirect URI first'; return; }
+  const url = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${encodeURIComponent(key)}&redirect_uri=${encodeURIComponent(redirect)}`;
+  window.open(url, '_blank');
+};
+
+connectBtn.onclick = async ()=>{
+  const t = tokenIn.value.trim();
+  if(!t){ statusText.textContent = 'Paste a valid access token first'; return; }
+  state.token = t;
+  statusDot.className = 'status-dot on';
+  statusText.textContent = 'Connected — token held in memory for this session only';
+  refreshBtn.disabled = false;
+  await refreshAll();
+  // auto-refresh on by default once connected
+  document.getElementById('autoRefreshChk').checked = true;
+  startAutoRefresh();
+  startFastTick();
+};
+
+refreshBtn.onclick = refreshAll;
+
+let autoRefreshTimer = null;
+function startAutoRefresh(){
+  stopAutoRefresh();
+  const secs = parseInt(document.getElementById('autoRefreshInterval').value, 10);
+  autoRefreshTimer = setInterval(()=>{
+    if(!refreshBtn.disabled) refreshAll();
+  }, secs*1000);
+}
+function stopAutoRefresh(){
+  if(autoRefreshTimer){ clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+}
+
+// --- Fast, lightweight live-price ticker (LTP only, no candles/EMA, no loading spinner) ---
+let fastTickTimer = null;
+async function fastTick(){
+  const keys = state.stocks.filter(s=>s.key).map(s=>s.key);
+  if(keys.length === 0) return;
+  try{
+    const map = await fetchLiveLtpBatch(keys);
+    state.liveMap = map;
+    state.stocks.forEach(s=>{
+      if(!s.key || !s.row || !s.data) return;
+      const newLtp = map[s.key];
+      if(newLtp == null) return;
+      const oldLtp = s.lastTickLtp != null ? s.lastTickLtp : s.data.closes[s.data.closes.length-1];
+      s.lastTickLtp = newLtp;
+      const prevClose = s.data.prevDayClose != null ? s.data.prevDayClose : s.data.closes[s.data.closes.length-2];
+      const chgPct = ((newLtp-prevClose)/prevClose*100).toFixed(2);
+      const cell = s.row.querySelector('.ltp');
+      cell.innerHTML = `₹${newLtp.toFixed(2)} <span title="Live LTP" style="color:var(--bull);font-size:9px;">●</span><br><span class="chg ${chgPct>=0?'up':'down'}">${chgPct>=0?'+':''}${chgPct}%</span>`;
+      if(newLtp > oldLtp){ cell.classList.remove('flash-down'); cell.classList.add('flash-up'); }
+      else if(newLtp < oldLtp){ cell.classList.remove('flash-up'); cell.classList.add('flash-down'); }
+      setTimeout(()=>{ cell.classList.remove('flash-up','flash-down'); }, 500);
+    });
+    updateMoLivePrices();
+  }catch(e){ /* silent — next tick will retry */ }
+}
+function updateMoLivePrices(){
+  document.querySelectorAll('[data-mo-price]').forEach(el=>{
+    const symbol = el.getAttribute('data-mo-price');
+    const stock = state.stocks.find(s=>s.symbol===symbol);
+    if(!stock || !stock.key) return;
+    const price = state.liveMap[stock.key];
+    if(price == null) return;
+    const oldPrice = stock._moLastPrice;
+    el.textContent = `₹${price.toFixed(2)}`;
+    if(oldPrice != null){
+      if(price > oldPrice){ el.classList.remove('flash-down'); el.classList.add('flash-up'); }
+      else if(price < oldPrice){ el.classList.remove('flash-up'); el.classList.add('flash-down'); }
+      setTimeout(()=> el.classList.remove('flash-up','flash-down'), 800);
+    }
+    stock._moLastPrice = price;
+  });
+}
+function startFastTick(){
+  stopFastTick();
+  fastTickTimer = setInterval(fastTick, 3000);
+}
+function stopFastTick(){
+  if(fastTickTimer){ clearInterval(fastTickTimer); fastTickTimer = null; }
+}
+document.getElementById('autoRefreshChk').onchange = (e)=>{
+  if(e.target.checked){
+    if(!state.token){ e.target.checked = false; statusText.textContent = 'Connect first to enable auto-refresh'; return; }
+    startAutoRefresh();
+  } else {
+    stopAutoRefresh();
+  }
+};
+document.getElementById('autoRefreshInterval').onchange = ()=>{
+  if(document.getElementById('autoRefreshChk').checked) startAutoRefresh();
+};
+
+loadFullBtn.onclick = async ()=>{
+  if(!state.token){ statusText.textContent = 'Connect with your access token first'; return; }
+  loadFullBtn.disabled = true;
+  const existing = new Set(state.stocks.map(s=>s.symbol));
+  const toAdd = FULL_FO_SYMBOLS.filter(sym => !existing.has(sym));
+  showProgress(`Adding ${toAdd.length} F&O stocks…`, 0);
+  toAdd.forEach(sym => state.stocks.push({symbol:sym, key:null, lotSize:null, row:null}));
+  renderRows();
+  await refreshAll();
+  loadFullBtn.disabled = false;
+  hideProgress();
+};
+
+async function refreshAll(){
+  refreshBtn.disabled = true;
+  const total = state.stocks.length;
+
+  // Step 1: resolve any unresolved symbols first (needed before batched LTP call)
+  const unresolved = state.stocks.filter(s=>!s.key);
+  if(unresolved.length){
+    showProgress(`Resolving instrument keys… 0 / ${unresolved.length}`, 0);
+    for(let i=0;i<unresolved.length;i++){
+      const stock = unresolved[i];
+      try{ await ensureResolved(stock); }
+      catch(e){
+        stock.error = e.message;
+        if(stock.row) stock.row.querySelector('.ltp').innerHTML = `<span class="err" title="${e.message}">${e.message}</span>`;
+      }
+      showProgress(`Resolving instrument keys… ${i+1} / ${unresolved.length}`, ((i+1)/unresolved.length)*100);
+      await new Promise(r=>setTimeout(r, 120));
+    }
+  }
+
+  // Step 2: batched live LTP
+  const resolvedKeys = state.stocks.filter(s=>s.key).map(s=>s.key);
+  try{
+    state.liveMap = await fetchLiveLtpBatch(resolvedKeys);
+  }catch(e){
+    state.liveMap = {};
+    statusText.textContent = `Live LTP unavailable (${e.message}) — showing last close instead`;
+  }
+
+  // Step 3: historical candles + EMA per stock
+  showProgress(`Loading candles & EMAs… 0 / ${total}`, 0);
+  for(let i=0;i<state.stocks.length;i++){
+    await loadOne(state.stocks[i]);
+    showProgress(`Loading candles & EMAs… ${i+1} / ${total}`, ((i+1)/total)*100);
+    await new Promise(r=>setTimeout(r, 150));
+  }
+  hideProgress();
+  refreshBtn.disabled = false;
+  const now = new Date();
+  lastUpdated.innerHTML = `<span class="status-dot on"></span>Updated ${now.toLocaleTimeString()}`;
+}
+
+document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+  th.onclick = ()=>{
+    const key = th.dataset.sort;
+    state.sortDir = (state.sortKey===key) ? -state.sortDir : 1;
+    state.sortKey = key;
+    const val = (s)=>{
+      if(key==='symbol') return s.symbol;
+      if(key==='ltp') return s.data?.closes?.slice(-1)[0] ?? -Infinity;
+      if(key==='lot') return s.lotSize ?? -Infinity;
+      if(key==='ema9') return s.data?.e9?.slice(-1)[0] ?? -Infinity;
+      if(key==='ema21') return s.data?.e21?.slice(-1)[0] ?? -Infinity;
+      if(key==='ema200') return s.data?.e200?.slice(-1)[0] ?? -Infinity;
+      if(key==='s921') return s.data?.c921?.status==='bull' ? 1 : 0;
+      if(key==='s9200') return s.data?.c9200?.status==='bull' ? 1 : 0;
+      if(key==='s21200') return s.data?.c21200?.status==='bull' ? 1 : 0;
+      return 0;
+    };
+    state.stocks.sort((a,b)=>{
+      const va=val(a), vb=val(b);
+      if(va<vb) return -1*state.sortDir;
+      if(va>vb) return 1*state.sortDir;
+      return 0;
+    });
+    renderRows();
+    state.stocks.forEach(s=>{
+      if(s.data){
+        s.row.querySelector('.ltp').innerHTML = `₹${s.data.closes.slice(-1)[0].toFixed(2)}`;
+        s.row.querySelector('.lot').textContent = s.lotSize != null ? s.lotSize : '—';
+        const l9 = s.data.e9.slice(-1)[0], l21 = s.data.e21.slice(-1)[0], l200 = s.data.e200.slice(-1)[0];
+        s.row.querySelector('.ema9').textContent = l9 != null ? l9.toFixed(2) : '—';
+        s.row.querySelector('.ema21').textContent = l21 != null ? l21.toFixed(2) : '—';
+        s.row.querySelector('.ema200').textContent = l200 != null ? l200.toFixed(2) : '—';
+        drawSpark(s.row.querySelector('canvas'), s.data.closes, s.data.e21, s.data.e200);
+        s.row.querySelector('.b921').innerHTML = badgeHTML(s.data.c921);
+        s.row.querySelector('.b9200').innerHTML = badgeHTML(s.data.c9200);
+        s.row.querySelector('.b21200').innerHTML = badgeHTML(s.data.c21200);
+      }
+    });
+    applyFilter();
+  };
+});
+
+// --- Option Chain ---
+const ocUnderlying = document.getElementById('ocUnderlying');
+const ocExpiry = document.getElementById('ocExpiry');
+const ocLoadBtn = document.getElementById('ocLoadBtn');
+const ocStatus = document.getElementById('ocStatus');
+const ocTbody = document.getElementById('ocTbody');
+
+function populateOcUnderlying(){
+  const prev = ocUnderlying.value;
+  ocUnderlying.innerHTML = '';
+  state.stocks.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.symbol;
+    opt.textContent = s.symbol;
+    ocUnderlying.appendChild(opt);
+  });
+  if(prev && state.stocks.some(s=>s.symbol===prev)) ocUnderlying.value = prev;
+}
+populateOcUnderlying();
+
+async function loadOcExpiries(){
+  if(!state.token){ ocStatus.textContent = 'Connect first'; return null; }
+  const symbol = ocUnderlying.value;
+  const stock = state.stocks.find(s=>s.symbol===symbol);
+  if(!stock) return null;
+  ocStatus.textContent = 'Loading expiries…';
+  try{
+    await ensureResolved(stock);
+    const url = `https://api.upstox.com/v2/option/contract?instrument_key=${encodeURIComponent(stock.key)}`;
+    const res = await fetch(url, { headers: { 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if(data.status !== 'success') throw new Error('API error');
+    const expiries = [...new Set((data.data||[]).map(c=>c.expiry))].sort((a,b)=> new Date(a)-new Date(b));
+    ocExpiry.innerHTML = '';
+    expiries.forEach(exp=>{
+      const opt = document.createElement('option');
+      opt.value = exp; opt.textContent = exp;
+      ocExpiry.appendChild(opt);
+    });
+    ocStatus.textContent = expiries.length ? `${expiries.length} expiries found` : 'No expiries found';
+    return expiries;
+  }catch(e){
+    ocStatus.textContent = `Error: ${e.message}`;
+    ocExpiry.innerHTML = '';
+    return null;
+  }
+}
+ocUnderlying.onchange = loadOcExpiries;
+
+async function loadOcChain(){
+  if(!state.token){ ocStatus.textContent = 'Connect first'; return; }
+  const symbol = ocUnderlying.value;
+  const expiry = ocExpiry.value;
+  if(!symbol || !expiry){ ocStatus.textContent = 'Pick underlying and expiry first'; return; }
+  const stock = state.stocks.find(s=>s.symbol===symbol);
+  const isAuto = loadOcChain._isAutoTick === true;
+  if(!isAuto){
+    ocStatus.textContent = 'Loading chain…';
+    ocTbody.innerHTML = `<tr><td colspan="9" class="loading-cell" style="text-align:center; padding:20px;">loading…</td></tr>`;
+  }
+  try{
+    await ensureResolved(stock);
+    const url = `https://api.upstox.com/v2/option/chain?instrument_key=${encodeURIComponent(stock.key)}&expiry_date=${expiry}`;
+    const res = await fetch(url, { headers: { 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if(data.status !== 'success') throw new Error('API error');
+    let rows = data.data || [];
+    if(rows.length === 0){ ocTbody.innerHTML = `<tr><td colspan="9" class="empty">No data for this expiry.</td></tr>`; ocStatus.textContent=''; return; }
+    rows.sort((a,b)=> a.strike_price - b.strike_price);
+    const spot = rows[0].underlying_spot_price;
+    let atmIdx = 0, atmDiff = Infinity;
+    rows.forEach((r,i)=>{ const d = Math.abs(r.strike_price - spot); if(d < atmDiff){ atmDiff = d; atmIdx = i; } });
+    const atmStrike = rows[atmIdx].strike_price;
+
+    // Keep only 5 ITM + ATM + 5 OTM strikes (11 total, or fewer near the edges of the chain)
+    const windowRows = rows.slice(Math.max(0, atmIdx-5), Math.min(rows.length, atmIdx+6));
+
+    ocTbody.innerHTML = '';
+    windowRows.forEach(r=>{
+      const c = r.call_options?.market_data || {};
+      const p = r.put_options?.market_data || {};
+      const cg = r.call_options?.option_greeks || {};
+      const pg = r.put_options?.option_greeks || {};
+      const isAtm = r.strike_price === atmStrike;
+      const callKey = r.call_options?.instrument_key;
+      const putKey = r.put_options?.instrument_key;
+      const tr = document.createElement('tr');
+      if(isAtm) tr.style.background = 'rgba(232,163,61,0.08)';
+      tr.innerHTML = `
+        <td class="ltp">${cg.iv != null ? cg.iv.toFixed(2) : '—'}</td>
+        <td class="ltp">${c.oi != null ? c.oi.toLocaleString() : '—'}</td>
+        <td class="ltp">${c.oi != null && c.prev_oi != null ? (c.oi-c.prev_oi).toLocaleString() : '—'}</td>
+        <td class="ltp">${c.ltp != null ? c.ltp.toFixed(2) : '—'}
+          ${callKey ? `<div style="margin-top:4px;"><button class="oc-buy" data-key="${callKey}" data-label="${r.strike_price} CE" style="background:var(--bull-dim); color:var(--bull); border-color:var(--bull-dim); padding:2px 6px; font-size:9px;">Buy</button> <button class="oc-sell" data-key="${callKey}" data-label="${r.strike_price} CE" style="background:var(--bear-dim); color:var(--bear); border-color:var(--bear-dim); padding:2px 6px; font-size:9px;">Sell</button></div>` : ''}
+        </td>
+        <td class="ltp" style="text-align:center; font-weight:700; ${isAtm?'color:var(--watch);':''}">${r.strike_price}${isAtm?' <span style="font-size:9px;">ATM</span>':''}</td>
+        <td class="ltp">${p.ltp != null ? p.ltp.toFixed(2) : '—'}
+          ${putKey ? `<div style="margin-top:4px;"><button class="oc-buy" data-key="${putKey}" data-label="${r.strike_price} PE" style="background:var(--bull-dim); color:var(--bull); border-color:var(--bull-dim); padding:2px 6px; font-size:9px;">Buy</button> <button class="oc-sell" data-key="${putKey}" data-label="${r.strike_price} PE" style="background:var(--bear-dim); color:var(--bear); border-color:var(--bear-dim); padding:2px 6px; font-size:9px;">Sell</button></div>` : ''}
+        </td>
+        <td class="ltp">${p.oi != null && p.prev_oi != null ? (p.oi-p.prev_oi).toLocaleString() : '—'}</td>
+        <td class="ltp">${p.oi != null ? p.oi.toLocaleString() : '—'}</td>
+        <td class="ltp">${pg.iv != null ? pg.iv.toFixed(2) : '—'}</td>
+      `;
+      ocTbody.appendChild(tr);
+    });
+    // Wire the freshly rendered Buy/Sell buttons to the shared order modal
+    const optionLotSize = stock.lotSize;
+    ocTbody.querySelectorAll('.oc-buy, .oc-sell').forEach(btn=>{
+      btn.onclick = ()=>{
+        const optStock = { symbol: btn.dataset.label, key: btn.dataset.key, lotSize: optionLotSize };
+        openOrderModal(optStock, btn.classList.contains('oc-buy') ? 'BUY' : 'SELL');
+      };
+    });
+    ocStatus.textContent = `Spot: ₹${spot?.toFixed(2) ?? '—'} · ${windowRows.length} strikes (5 ITM + ATM + 5 OTM) · auto-updates every 10s`;
+  }catch(e){
+    ocTbody.innerHTML = `<tr><td colspan="9" class="err" style="text-align:center; padding:16px;">${e.message}</td></tr>`;
+    ocStatus.textContent = '';
+  }
+}
+ocLoadBtn.onclick = ()=>{ loadOcChain._isAutoTick = false; loadOcChain(); startOcAutoRefresh(); };
+
+let ocAutoTimer = null;
+function startOcAutoRefresh(){
+  stopOcAutoRefresh();
+  ocAutoTimer = setInterval(()=>{
+    loadOcChain._isAutoTick = true;
+    loadOcChain();
+  }, 10000);
+}
+function stopOcAutoRefresh(){
+  if(ocAutoTimer){ clearInterval(ocAutoTimer); ocAutoTimer = null; }
+}
+
+async function jumpToOptionChain(symbol){
+  if(!state.token){ statusText.textContent = 'Connect first to view option chains'; return; }
+  if(![...ocUnderlying.options].some(o=>o.value===symbol)){
+    // symbol not currently in the dropdown (shouldn't normally happen) — repopulate first
+    populateOcUnderlying();
+  }
+  ocUnderlying.value = symbol;
+  document.getElementById('ocPanelWrap').scrollIntoView({behavior:'smooth', block:'start'});
+  const expiries = await loadOcExpiries();
+  if(expiries && expiries.length){
+    ocExpiry.value = expiries[0]; // nearest expiry by default
+    loadOcChain._isAutoTick = false;
+    await loadOcChain();
+    startOcAutoRefresh();
+  }
+}
+
+// --- Order placement ---
+const orderModalOverlay = document.getElementById('orderModalOverlay');
+const orderModalTitle = document.getElementById('orderModalTitle');
+const ordQty = document.getElementById('ordQty');
+const ordProduct = document.getElementById('ordProduct');
+const ordType = document.getElementById('ordType');
+const ordPriceWrap = document.getElementById('ordPriceWrap');
+const ordPrice = document.getElementById('ordPrice');
+const ordConfirmChk = document.getElementById('ordConfirmChk');
+const ordStatus = document.getElementById('ordStatus');
+const ordSubmitBtn = document.getElementById('ordSubmitBtn');
+let currentOrderStock = null, currentOrderSide = null;
+
+function openOrderModal(stock, side){
+  const sandboxOn = document.getElementById('sandboxModeChk')?.checked;
+  if(!sandboxOn && !state.token){ statusText.textContent = 'Connect first to place orders'; return; }
+  if(sandboxOn && !document.getElementById('sandboxTokenIn').value.trim()){ ledgerStatus && (ledgerStatus.textContent = 'Paste your sandbox token first'); return; }
+  currentOrderStock = stock; currentOrderSide = side;
+  orderModalTitle.textContent = `${side === 'BUY' ? 'Buy' : 'Sell'} ${stock.symbol}${sandboxOn ? ' (DEMO)' : ''}`;
+  orderModalTitle.style.color = side === 'BUY' ? 'var(--bull)' : 'var(--bear)';
+  ordQty.value = stock.lotSize || 1;
+  ordProduct.value = 'I';
+  ordType.value = 'MARKET';
+  ordPriceWrap.style.display = 'none';
+  ordConfirmChk.checked = sandboxOn ? true : false; // no need to re-confirm for demo orders
+  document.querySelector('#orderModalOverlay label:has(#ordConfirmChk)').style.display = sandboxOn ? 'none' : 'flex';
+  document.querySelector('#orderModalOverlay .banner').innerHTML = sandboxOn
+    ? '🧪 <b>Sandbox / Demo order</b> — fake money, no real trade will be placed.'
+    : '⚠️ This places a <b>real order with real money</b> on your live Upstox account. Double-check everything before confirming.';
+  document.querySelector('#orderModalOverlay .banner').style.borderLeftColor = sandboxOn ? 'var(--bull)' : 'var(--bear)';
+  ordStatus.textContent = '';
+  orderModalOverlay.style.display = 'flex';
+}
+document.getElementById('orderModalClose').onclick = ()=> orderModalOverlay.style.display = 'none';
+document.getElementById('ordCancelBtn').onclick = ()=> orderModalOverlay.style.display = 'none';
+ordType.onchange = ()=>{ ordPriceWrap.style.display = ordType.value === 'LIMIT' ? 'block' : 'none'; };
+
+ordSubmitBtn.onclick = async ()=>{
+  const sandboxOn = document.getElementById('sandboxModeChk')?.checked;
+  if(!sandboxOn && !ordConfirmChk.checked){ ordStatus.textContent = 'Please tick the confirmation checkbox first.'; return; }
+  const qty = parseInt(ordQty.value, 10);
+  if(!qty || qty < 1){ ordStatus.textContent = 'Enter a valid quantity.'; return; }
+  if(ordType.value === 'LIMIT' && !ordPrice.value){ ordStatus.textContent = 'Enter a limit price.'; return; }
+
+  if(!sandboxOn){
+    const confirmMsg = `Confirm: ${currentOrderSide} ${qty} x ${currentOrderStock.symbol} (${ordProduct.value === 'I' ? 'Intraday' : 'Delivery'}, ${ordType.value}${ordType.value==='LIMIT' ? ' @ ₹'+ordPrice.value : ''}).\n\nThis is a REAL order on your live Upstox account. Proceed?`;
+    if(!confirm(confirmMsg)) return;
+  }
+
+  ordStatus.textContent = sandboxOn ? 'Placing demo order…' : 'Placing order…';
+  ordSubmitBtn.disabled = true;
+  try{
+    const tokenToUse = sandboxOn ? document.getElementById('sandboxTokenIn').value.trim() : state.token;
+    if(sandboxOn){
+      // Sandbox equity/option keys still need resolving via the live token if not already known
+      if(!currentOrderStock.key) await ensureResolved(currentOrderStock);
+    } else {
+      await ensureResolved(currentOrderStock);
+    }
+    const body = {
+      quantity: qty,
+      product: ordProduct.value,
+      validity: 'DAY',
+      price: ordType.value === 'LIMIT' ? parseFloat(ordPrice.value) : 0,
+      tag: 'fno-dashboard',
+      instrument_token: currentOrderStock.key,
+      order_type: ordType.value,
+      transaction_type: currentOrderSide,
+      disclosed_quantity: 0,
+      trigger_price: 0,
+      is_amo: false,
+    };
+    const url = sandboxOn ? 'https://sandbox.upstox.com/v2/order/place' : 'https://api-hft.upstox.com/v3/order/place';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Accept':'application/json', 'Authorization':'Bearer '+tokenToUse },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok || data.status !== 'success'){
+      const msg = data.errors?.[0]?.message || data.message || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    ordStatus.innerHTML = `<span style="color:var(--bull);">✔ ${sandboxOn ? 'Demo order' : 'Order'} placed. Order ID: ${data.data?.order_ids?.[0] || data.data?.order_id || '—'}</span>`;
+    setTimeout(()=>{ orderModalOverlay.style.display = 'none'; loadLedger(); }, 1500);
+  }catch(e){
+    ordStatus.innerHTML = `<span style="color:var(--bear);">✖ ${e.message}</span>`;
+  }
+  ordSubmitBtn.disabled = false;
+};
+
+// --- Ledger: positions + trade book ---
+const ledgerRefreshBtn = document.getElementById('ledgerRefreshBtn');
+const ledgerStatus = document.getElementById('ledgerStatus');
+const ledgerTotals = document.getElementById('ledgerTotals');
+const posTbody = document.getElementById('posTbody');
+const tradeTbody = document.getElementById('tradeTbody');
+
+async function loadLedger(){
+  if(!state.token){ ledgerStatus.textContent = 'Connect first'; return; }
+  ledgerStatus.textContent = 'Loading…';
+  try{
+    const [posRes, tradeRes] = await Promise.all([
+      fetch('https://api.upstox.com/v2/portfolio/short-term-positions', { headers:{ 'Accept':'application/json', 'Authorization':'Bearer '+state.token } }),
+      fetch('https://api.upstox.com/v2/order/trades/get-trades-for-day', { headers:{ 'Accept':'application/json', 'Authorization':'Bearer '+state.token } }),
+    ]);
+    const posData = await posRes.json();
+    const tradeData = await tradeRes.json();
+    if(posData.status !== 'success') throw new Error('Positions API error');
+    if(tradeData.status !== 'success') throw new Error('Trades API error');
+
+    const positions = posData.data || [];
+    const trades = tradeData.data || [];
+
+    let totalPnl = 0;
+    posTbody.innerHTML = positions.length === 0
+      ? `<tr><td colspan="6" class="empty">No open positions today.</td></tr>`
+      : '';
+    positions.forEach(p=>{
+      totalPnl += (p.pnl || 0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="sym">${p.trading_symbol || p.tradingsymbol || '—'}</td>
+        <td class="ltp">${p.quantity}</td>
+        <td class="ltp">₹${(p.average_price||0).toFixed(2)}</td>
+        <td class="ltp">₹${(p.last_price||0).toFixed(2)}</td>
+        <td class="ltp" style="color:${(p.pnl||0)>=0?'var(--bull)':'var(--bear)'}">₹${(p.pnl||0).toFixed(2)}</td>
+        <td class="lot">${p.product}</td>
+      `;
+      posTbody.appendChild(tr);
+    });
+
+    tradeTbody.innerHTML = trades.length === 0
+      ? `<tr><td colspan="6" class="empty">No trades executed today yet.</td></tr>`
+      : '';
+    trades.forEach(t=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="lot">${(t.order_timestamp||t.exchange_timestamp||'').toString().slice(0,19)}</td>
+        <td class="sym">${t.trading_symbol || t.tradingsymbol || '—'}</td>
+        <td class="ltp" style="color:${t.transaction_type==='BUY'?'var(--bull)':'var(--bear)'}">${t.transaction_type}</td>
+        <td class="ltp">${t.quantity}</td>
+        <td class="ltp">₹${(t.average_price||t.price||0).toFixed(2)}</td>
+        <td class="lot">${t.order_id||'—'}</td>
+      `;
+      tradeTbody.appendChild(tr);
+    });
+
+    ledgerTotals.innerHTML = `Total open-position P&amp;L: <b style="color:${totalPnl>=0?'var(--bull)':'var(--bear)'}">₹${totalPnl.toFixed(2)}</b> · ${positions.length} positions · ${trades.length} trades today`;
+    ledgerStatus.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+  }catch(e){
+    ledgerStatus.textContent = `Error: ${e.message}`;
+  }
+}
+ledgerRefreshBtn.onclick = loadLedger;
+
+document.getElementById('sandboxModeChk').onchange = (e)=>{
+  document.getElementById('sandboxTokenRow').style.display = e.target.checked ? 'block' : 'none';
+  document.getElementById('sandboxBanner').style.display = e.target.checked ? 'block' : 'none';
+};
+
+// --- Tab switching (3 tabs) ---
+const tabBtnScreener = document.getElementById('tabBtnScreener');
+const tabBtnTrading = document.getElementById('tabBtnTrading');
+const tabBtnCrypto = document.getElementById('tabBtnCrypto');
+const tabScreener = document.getElementById('tabScreener');
+const tabTrading = document.getElementById('tabTrading');
+const tabCrypto = document.getElementById('tabCrypto');
+function showTab(which){
+  tabScreener.style.display = which==='screener' ? '' : 'none';
+  tabTrading.style.display = which==='trading' ? '' : 'none';
+  tabCrypto.style.display = which==='crypto' ? '' : 'none';
+  [tabBtnScreener, tabBtnTrading, tabBtnCrypto].forEach(b=>b.classList.remove('active-tab'));
+  ({screener:tabBtnScreener, trading:tabBtnTrading, crypto:tabBtnCrypto})[which].classList.add('active-tab');
+}
+tabBtnScreener.onclick = ()=> showTab('screener');
+tabBtnTrading.onclick = ()=>{ showTab('trading'); loadLedger(); };
+tabBtnCrypto.onclick = ()=> showTab('crypto');
+
+// ================= Delta Exchange (crypto) integration =================
+const deltaState = {
+  apiKey: '', apiSecret: '', env: 'live', // 'live' or 'testnet'
+  watchlist: ['BTCUSD','ETHUSD','SOLUSD','XAUTUSD'],
+  productCache: {}, // symbol -> {product_id, ...}
+  emaData: {},      // symbol -> {closes, e9, e21, e200, c921, c9200, c21200}
+  lastTickPrice: {}, // symbol -> last seen price, for flash comparison
+};
+function deltaBaseUrl(){ return deltaState.env === 'testnet' ? 'https://cdn-ind.testnet.deltaex.org' : 'https://api.india.delta.exchange'; }
+
+async function deltaFetchDailyCandles(symbol, startOverride, endOverride){
+  const tf = document.getElementById('deltaTimeframeSel').value; // '1d' or '15m'
+  let end = endOverride != null ? endOverride : Math.floor(Date.now()/1000);
+  let start;
+  if(startOverride != null){
+    start = startOverride;
+  } else {
+    const lookbackSeconds = tf === '15m'
+      ? 15 * 24*60*60   // ~15 days back → ~1440 fifteen-min candles (crypto trades 24/7), comfortably over 200
+      : 260 * 24*60*60; // ~260 days back for daily, comfortably over 200
+    start = end - lookbackSeconds;
+  }
+  const url = `${deltaBaseUrl()}/v2/history/candles?resolution=${tf}&symbol=${encodeURIComponent(symbol)}&start=${start}&end=${end}`;
+  const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+  const data = await res.json();
+  if(!res.ok || data.success === false) throw new Error(`Candle HTTP ${res.status}`);
+  const candles = (data.result || []).slice().sort((a,b)=> a.time - b.time);
+  return candles;
+}
+
+async function loadDeltaEma(sym){
+  const row = [...deltaTbody.children].find(tr=>tr._sym===sym);
+  if(!row) return;
+  try{
+    const candles = await deltaFetchDailyCandles(sym);
+    if(candles.length < 30){ throw new Error('Not enough candle history'); }
+    const closes = candles.map(c=>c.close);
+    const e9 = ema(closes, 9), e21 = ema(closes, 21), e200 = ema(closes, 200);
+    deltaState.emaData[sym] = {
+      closes, e9, e21, e200,
+      c921: classifyPair(e9,e21), c9200: classifyPair(e9,e200), c21200: classifyPair(e21,e200)
+    };
+    const d = deltaState.emaData[sym];
+    const l9 = e9[e9.length-1], l21 = e21[e21.length-1], l200 = e200[e200.length-1];
+    row.querySelector('[data-field="ema9"]').textContent = l9 != null ? l9.toFixed(2) : '—';
+    row.querySelector('[data-field="ema21"]').textContent = l21 != null ? l21.toFixed(2) : '—';
+    row.querySelector('[data-field="ema200"]').textContent = l200 != null ? l200.toFixed(2) : '—';
+    row.querySelector('[data-field="b921"]').innerHTML = badgeHTML(d.c921);
+    row.querySelector('[data-field="b9200"]').innerHTML = badgeHTML(d.c9200);
+    row.querySelector('[data-field="b21200"]').innerHTML = badgeHTML(d.c21200);
+    if(typeof botState !== 'undefined' && typeof getBotSymbols === 'function' && getBotSymbols().includes(sym) && typeof checkBotSignals === 'function') checkBotSignals(sym, d);
+  }catch(e){
+    row.querySelector('[data-field="ema9"]').innerHTML = `<span class="err" title="${e.message}">err</span>`;
+    row.querySelector('[data-field="ema21"]').textContent = '—';
+    row.querySelector('[data-field="ema200"]').textContent = '—';
+  }
+}
+
+async function loadAllDeltaEmas(){
+  for(const sym of deltaState.watchlist){
+    await loadDeltaEma(sym);
+    await new Promise(r=>setTimeout(r, 150));
+  }
+}
+let deltaEmaTimer = null;
+function startDeltaEmaRefresh(){
+  stopDeltaEmaRefresh();
+  loadAllDeltaEmas();
+  deltaEmaTimer = setInterval(loadAllDeltaEmas, 60000);
+}
+function stopDeltaEmaRefresh(){ if(deltaEmaTimer){ clearInterval(deltaEmaTimer); deltaEmaTimer = null; } }
+
+async function hmacSha256Hex(secret, message){
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function deltaRequest(method, path, { query='', body=null } = {}){
+  const timestamp = Math.floor(Date.now()/1000).toString();
+  const bodyStr = body ? JSON.stringify(body) : '';
+  const signData = method + timestamp + path + query + bodyStr;
+  const signature = await hmacSha256Hex(deltaState.apiSecret, signData);
+  const res = await fetch(deltaBaseUrl() + path + query, {
+    method,
+    headers: {
+      'Accept':'application/json',
+      'Content-Type':'application/json',
+      'api-key': deltaState.apiKey,
+      'signature': signature,
+      'timestamp': timestamp,
+    },
+    body: bodyStr || undefined,
+  });
+  const data = await res.json();
+  if(!res.ok || data.success === false){
+    throw new Error(data.error?.code || data.error?.message || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+async function deltaPublicTicker(symbol){
+  const res = await fetch(`${deltaBaseUrl()}/v2/tickers/${symbol}`, { headers:{ 'Accept':'application/json' } });
+  const data = await res.json();
+  if(!res.ok || data.success === false) throw new Error(`Ticker HTTP ${res.status}`);
+  return data.result;
+}
+
+async function deltaGetProduct(symbol){
+  if(deltaState.productCache[symbol]) return deltaState.productCache[symbol];
+  const res = await fetch(`${deltaBaseUrl()}/v2/products/${symbol}`, { headers:{ 'Accept':'application/json' } });
+  const data = await res.json();
+  if(!res.ok || data.success === false) throw new Error(`Product lookup failed for ${symbol}`);
+  deltaState.productCache[symbol] = data.result;
+  return data.result;
+}
+
+const deltaConnectBtn = document.getElementById('deltaConnectBtn');
+const deltaStatusText = document.getElementById('deltaStatusText');
+const deltaStatusDot = document.getElementById('deltaStatusDot');
+const deltaTbody = document.getElementById('deltaTbody');
+const deltaBalTbody = document.getElementById('deltaBalTbody');
+const deltaPosTbody = document.getElementById('deltaPosTbody');
+
+function renderDeltaWatchlist(){
+  deltaTbody.innerHTML = '';
+  deltaState.watchlist.forEach(sym=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="sym">${sym}</td>
+      <td class="ltp" data-field="price">—</td>
+      <td class="ltp" data-field="chg">—</td>
+      <td class="ltp" data-field="ema9">—</td>
+      <td class="ltp" data-field="ema21">—</td>
+      <td class="ltp" data-field="ema200">—</td>
+      <td data-field="b921"><span class="badge na">—</span></td>
+      <td data-field="b9200"><span class="badge na">—</span></td>
+      <td data-field="b21200"><span class="badge na">—</span></td>
+      <td>
+        <button class="delta-buy" style="background:var(--bull-dim); color:var(--bull); border-color:var(--bull-dim); padding:5px 9px; font-size:11px;">Buy</button>
+        <button class="delta-sell" style="background:var(--bear-dim); color:var(--bear); border-color:var(--bear-dim); padding:5px 9px; font-size:11px;">Sell</button>
+      </td>
+      <td><button class="rm" title="Remove">✕</button></td>
+    `;
+    tr.querySelector('.rm').onclick = ()=>{
+      deltaState.watchlist = deltaState.watchlist.filter(s=>s!==sym);
+      renderDeltaWatchlist();
+    };
+    tr.querySelector('.delta-buy').onclick = ()=> openDeltaOrderModal(sym, 'buy');
+    tr.querySelector('.delta-sell').onclick = ()=> openDeltaOrderModal(sym, 'sell');
+    tr._sym = sym;
+    deltaTbody.appendChild(tr);
+  });
+}
+renderDeltaWatchlist();
+
+// Default backtest date range: last 1 year
+(function(){
+  const toEl = document.getElementById('btEndDate');
+  const fromEl = document.getElementById('btStartDate');
+  const today = new Date();
+  const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear()-1);
+  toEl.value = today.toISOString().slice(0,10);
+  fromEl.value = yearAgo.toISOString().slice(0,10);
+})();
+
+document.getElementById('deltaTimeframeSel').onchange = ()=>{
+  if(deltaState.apiKey) loadAllDeltaEmas();
+};
+
+document.getElementById('deltaAddBtn').onclick = ()=>{
+  const inp = document.getElementById('deltaSymIn');
+  const sym = inp.value.trim().toUpperCase();
+  if(!sym || deltaState.watchlist.includes(sym)) return;
+  deltaState.watchlist.push(sym);
+  inp.value = '';
+  renderDeltaWatchlist();
+  if(deltaState.apiKey){ deltaFastTick(); loadDeltaEma(sym); }
+};
+
+deltaConnectBtn.onclick = ()=>{
+  deltaState.apiKey = document.getElementById('deltaApiKeyIn').value.trim();
+  deltaState.apiSecret = document.getElementById('deltaApiSecretIn').value.trim();
+  deltaState.env = document.getElementById('deltaEnvSel').value;
+  if(!deltaState.apiKey || !deltaState.apiSecret){ deltaStatusText.textContent = 'Enter API key and secret first'; return; }
+  deltaStatusDot.className = 'status-dot on';
+  deltaStatusText.textContent = `Connected (${deltaState.env === 'testnet' ? 'Testnet — fake funds' : 'Live'}) — credentials held in memory for this session only`;
+  deltaFastTick();
+  startDeltaTick();
+  startDeltaEmaRefresh();
+  loadDeltaLedger();
+};
+
+let deltaTickTimer = null;
+async function deltaFastTick(){
+  for(const sym of deltaState.watchlist){
+    try{
+      const t = await deltaPublicTicker(sym);
+      const row = [...deltaTbody.children].find(tr=>tr._sym===sym);
+      if(!row) continue;
+      const price = parseFloat(t.close || t.mark_price || t.spot_price || 0);
+      const priceCell = row.querySelector('[data-field="price"]');
+      if(price){
+        const oldPrice = deltaState.lastTickPrice[sym];
+        priceCell.textContent = `$${price.toFixed(2)}`;
+        if(oldPrice != null){
+          if(price > oldPrice){ priceCell.classList.remove('flash-down'); priceCell.classList.add('flash-up'); }
+          else if(price < oldPrice){ priceCell.classList.remove('flash-up'); priceCell.classList.add('flash-down'); }
+          setTimeout(()=>{ priceCell.classList.remove('flash-up','flash-down'); }, 500);
+        }
+        deltaState.lastTickPrice[sym] = price;
+        if(typeof botState !== 'undefined' && typeof getBotSymbols === 'function' && getBotSymbols().includes(sym) && typeof checkBotPositions === 'function') checkBotPositions(sym, price);
+      } else {
+        priceCell.textContent = '—';
+      }
+      const chgVal = t.mark_change_24h != null ? parseFloat(t.mark_change_24h) : null;
+      const chgCell = row.querySelector('[data-field="chg"]');
+      if(chgVal != null){
+        chgCell.innerHTML = `<span class="chg ${chgVal>=0?'up':'down'}">${chgVal>=0?'+':''}${chgVal.toFixed(2)}%</span>`;
+      } else chgCell.textContent = '—';
+    }catch(e){ /* skip this symbol this tick */ }
+  }
+}
+function startDeltaTick(){ stopDeltaTick(); deltaTickTimer = setInterval(deltaFastTick, 3000); }
+function stopDeltaTick(){ if(deltaTickTimer){ clearInterval(deltaTickTimer); deltaTickTimer = null; } }
+
+// --- Delta order modal (reuses same visual pattern as Upstox modal) ---
+const deltaOrderOverlay = document.getElementById('deltaOrderOverlay');
+let currentDeltaSymbol = null, currentDeltaSide = null;
+function openDeltaOrderModal(symbol, side){
+  if(!deltaState.apiKey){ deltaStatusText.textContent = 'Connect first to place orders'; return; }
+  currentDeltaSymbol = symbol; currentDeltaSide = side;
+  document.getElementById('deltaOrderTitle').textContent = `${side === 'buy' ? 'Buy' : 'Sell'} ${symbol}`;
+  document.getElementById('deltaOrderTitle').style.color = side === 'buy' ? 'var(--bull)' : 'var(--bear)';
+  document.getElementById('deltaOrdQty').value = 1;
+  document.getElementById('deltaOrdType').value = 'market_order';
+  document.getElementById('deltaOrdPriceWrap').style.display = 'none';
+  document.getElementById('deltaOrdConfirmChk').checked = false;
+  document.getElementById('deltaOrdStatus').textContent = '';
+  deltaOrderOverlay.style.display = 'flex';
+}
+document.getElementById('deltaOrderModalClose').onclick = ()=> deltaOrderOverlay.style.display = 'none';
+document.getElementById('deltaOrdCancelBtn').onclick = ()=> deltaOrderOverlay.style.display = 'none';
+document.getElementById('deltaOrdType').onchange = (e)=>{
+  document.getElementById('deltaOrdPriceWrap').style.display = e.target.value === 'limit_order' ? 'block' : 'none';
+};
+
+document.getElementById('deltaOrdSubmitBtn').onclick = async ()=>{
+  const chk = document.getElementById('deltaOrdConfirmChk');
+  const statusEl = document.getElementById('deltaOrdStatus');
+  if(!chk.checked){ statusEl.textContent = 'Please tick the confirmation checkbox first.'; return; }
+  const size = parseInt(document.getElementById('deltaOrdQty').value, 10);
+  const orderType = document.getElementById('deltaOrdType').value;
+  const limitPrice = document.getElementById('deltaOrdPrice').value;
+  if(!size || size < 1){ statusEl.textContent = 'Enter a valid quantity.'; return; }
+  if(orderType === 'limit_order' && !limitPrice){ statusEl.textContent = 'Enter a limit price.'; return; }
+
+  const envLabel = deltaState.env === 'testnet' ? 'TESTNET (fake funds)' : 'LIVE (REAL MONEY)';
+  const confirmMsg = `Confirm: ${currentDeltaSide.toUpperCase()} ${size} x ${currentDeltaSymbol} (${orderType}${orderType==='limit_order' ? ' @ '+limitPrice : ''}) on Delta Exchange — ${envLabel}.\n\nProceed?`;
+  if(!confirm(confirmMsg)) return;
+
+  statusEl.textContent = 'Placing order…';
+  document.getElementById('deltaOrdSubmitBtn').disabled = true;
+  try{
+    const product = await deltaGetProduct(currentDeltaSymbol);
+    const body = {
+      product_id: product.id,
+      size: size,
+      side: currentDeltaSide,
+      order_type: orderType,
+    };
+    if(orderType === 'limit_order') body.limit_price = limitPrice;
+    const result = await deltaRequest('POST', '/v2/orders', { body });
+    statusEl.innerHTML = `<span style="color:var(--bull);">✔ Order placed. Order ID: ${result.result?.id || '—'}</span>`;
+    setTimeout(()=>{ deltaOrderOverlay.style.display = 'none'; loadDeltaLedger(); }, 1500);
+  }catch(e){
+    statusEl.innerHTML = `<span style="color:var(--bear);">✖ ${e.message}</span>`;
+  }
+  document.getElementById('deltaOrdSubmitBtn').disabled = false;
+};
+
+async function loadDeltaLedger(){
+  if(!deltaState.apiKey){ return; }
+  try{
+    const balRes = await deltaRequest('GET', '/v2/wallet/balances');
+    const balances = (balRes.result || []).filter(b=> parseFloat(b.balance) > 0);
+    deltaBalTbody.innerHTML = balances.length === 0
+      ? `<tr><td colspan="3" class="empty">No non-zero balances.</td></tr>`
+      : '';
+    balances.forEach(b=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="sym">${b.asset_symbol}</td><td class="ltp">${parseFloat(b.balance).toFixed(4)}</td><td class="ltp">${parseFloat(b.available_balance).toFixed(4)}</td>`;
+      deltaBalTbody.appendChild(tr);
+    });
+  }catch(e){
+    deltaBalTbody.innerHTML = `<tr><td colspan="3" class="err" style="text-align:center;">${e.message}</td></tr>`;
+  }
+  try{
+    const posRes = await deltaRequest('GET', '/v2/positions/margined');
+    const positions = (posRes.result || []).filter(p => parseFloat(p.size) !== 0);
+    deltaPosTbody.innerHTML = positions.length === 0
+      ? `<tr><td colspan="5" class="empty">No open positions.</td></tr>`
+      : '';
+    positions.forEach(p=>{
+      const pnl = parseFloat(p.unrealized_pnl || 0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="sym">${p.product_symbol || p.product?.symbol || '—'}</td>
+        <td class="ltp">${p.size}</td>
+        <td class="ltp">${parseFloat(p.entry_price||0).toFixed(2)}</td>
+        <td class="ltp" style="color:${pnl>=0?'var(--bull)':'var(--bear)'}">${pnl.toFixed(2)}</td>
+        <td class="lot">${p.product?.contract_type || '—'}</td>
+      `;
+      deltaPosTbody.appendChild(tr);
+    });
+  }catch(e){
+    deltaPosTbody.innerHTML = `<tr><td colspan="5" class="err" style="text-align:center;">${e.message}</td></tr>`;
+  }
+}
+document.getElementById('deltaLedgerRefreshBtn').onclick = loadDeltaLedger;
+setInterval(()=>{ if(deltaState.apiKey) loadDeltaLedger(); }, 10000);
+
+// ================= Auto-Trade Bot =================
+const botState = {
+  armed: false,
+  positions: [], // {id, symbol, leg, side, entry, target, stoploss, qty, status, openTime}
+  log: [],
+};
+function getBotSymbols(){
+  const list = [];
+  if(document.getElementById('botSymBTC').checked) list.push('BTCUSD');
+  if(document.getElementById('botSymXAUT').checked) list.push('XAUTUSD');
+  return list;
+}
+function getBotInrForSymbol(symbol){
+  // XAUTUSD only — BTC uses direct $ points, no rupee conversion
+  return parseFloat(document.getElementById('botInrXAUT').value) || 0;
+}
+function getBotQty(){
+  return 1; // whole contract — avoids Delta rejecting fractional order sizes
+}
+function getBotUsdMoveForSymbol(symbol){
+  if(symbol === 'BTCUSD'){
+    return parseFloat(document.getElementById('botUsdBTC').value) || 0; // plain $ price-move target, unchanged from original
+  }
+  const rate = parseFloat(document.getElementById('botUsdInrRate').value) || 83;
+  return getBotInrForSymbol(symbol) / rate; // ₹ target converted to the $ price move needed, at qty=1
+}
+function updateBotInrPreview(){
+  const btcUsd = getBotUsdMoveForSymbol('BTCUSD');
+  const xautInr = getBotInrForSymbol('XAUTUSD');
+  const xautUsd = getBotUsdMoveForSymbol('XAUTUSD');
+  document.getElementById('botInrPreview').textContent =
+    `BTCUSD: $${btcUsd} target/SL (1 contract) · XAUTUSD: ₹${xautInr.toLocaleString()} target/SL ≈ $${xautUsd.toFixed(2)} price move (1 contract)`;
+}
+['botUsdBTC','botInrXAUT','botUsdInrRate'].forEach(id=> document.getElementById(id).addEventListener('input', updateBotInrPreview));
+updateBotInrPreview();
+const botArmBtn = document.getElementById('botArmBtn');
+const botStatusDot = document.getElementById('botStatusDot');
+const botStatusText = document.getElementById('botStatusText');
+const botPosTbody = document.getElementById('botPosTbody');
+const botLogTbody = document.getElementById('botLogTbody');
+function ensureBotSymbolsInWatchlist(){
+  getBotSymbols().forEach(sym=>{
+    if(!deltaState.watchlist.includes(sym)){
+      deltaState.watchlist.push(sym);
+    }
+  });
+  renderDeltaWatchlist();
+  if(deltaState.apiKey){ deltaFastTick(); getBotSymbols().forEach(sym=>loadDeltaEma(sym)); }
+}
+['botSymBTC','botSymXAUT'].forEach(id=>{
+  document.getElementById(id).onchange = (e)=>{
+    if(botState.armed){ e.target.checked = !e.target.checked; alert('Disarm the bot before changing symbols.'); return; }
+    if(getBotSymbols().length === 0){ e.target.checked = true; alert('At least one symbol must be selected.'); return; }
+    ensureBotSymbolsInWatchlist();
+  };
+});
+
+const tgBotToken = document.getElementById('tgBotToken');
+const tgChatId = document.getElementById('tgChatId');
+const tgStatus = document.getElementById('tgStatus');
+
+async function sendTelegram(text){
+  const token = tgBotToken.value.trim();
+  const chatId = tgChatId.value.trim();
+  if(!token || !chatId) return false;
+  try{
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text })
+    });
+    const data = await res.json();
+    return data.ok === true;
+  }catch(e){ return false; }
+}
+
+document.getElementById('tgTestBtn').onclick = async ()=>{
+  tgStatus.textContent = 'Sending test message…';
+  const ok = await sendTelegram('✅ Test message from your F&O/Crypto dashboard bot. Notifications are working!');
+  tgStatus.innerHTML = ok
+    ? `<span style="color:var(--bull);">✔ Sent — check your Telegram app</span>`
+    : `<span style="color:var(--bear);">✖ Failed — check your Bot Token and Chat ID</span>`;
+};
+
+function notifyUser(title, body){
+  // Browser notification (only visible on the device this dashboard is open on)
+  if('Notification' in window && Notification.permission === 'granted'){
+    new Notification(title, { body });
+  } else if('Notification' in window && Notification.permission !== 'denied'){
+    Notification.requestPermission();
+  }
+  // Telegram (arrives on your phone regardless of where the dashboard is running)
+  sendTelegram(`${title}\n${body}`);
+}
+
+botArmBtn.onclick = ()=>{
+  if(botState.armed){
+    botState.armed = false;
+    botStatusDot.className = 'status-dot off';
+    botStatusText.textContent = 'Bot is OFF';
+    botArmBtn.textContent = 'Arm Bot';
+    botArmBtn.classList.remove('primary');
+    return;
+  }
+  if(!deltaState.apiKey){ alert('Connect to Delta Exchange first (in the panel above).'); return; }
+  const symbols = getBotSymbols();
+  if(symbols.length === 0){ alert('Select at least one symbol (BTCUSD and/or XAUTUSD).'); return; }
+  const envLabel = deltaState.env === 'testnet' ? 'TESTNET (fake funds)' : 'LIVE (REAL MONEY)';
+  const qty = getBotQty();
+  const symbolLines = symbols.map(s=> s==='BTCUSD'
+    ? `• BTCUSD: target/SL ±$${getBotUsdMoveForSymbol(s)}, ${qty} contract per leg`
+    : `• XAUTUSD: target/SL ±₹${getBotInrForSymbol(s).toLocaleString()} (≈$${getBotUsdMoveForSymbol(s).toFixed(2)}), ${qty} contract per leg`
+  ).join('\n');
+  const msg = `Arm the auto-trade bot?\n\n${symbolLines}\n\nApplies independently per symbol:\n• 9/200 EMA cross → open 1 leg\n• 21/200 EMA cross → additional leg\n• Market orders, fully automatic, no per-trade confirmation\n\nMode: ${envLabel}. This will place REAL orders the moment a signal fires. Proceed?`;
+  if(!confirm(msg)) return;
+  botState.armed = true;
+  botStatusDot.className = 'status-dot on';
+  botStatusText.textContent = `Bot is ARMED on ${symbols.join(' + ')} (${deltaState.env === 'testnet' ? 'Testnet' : 'LIVE'})`;
+  botArmBtn.textContent = 'Disarm Bot';
+  botArmBtn.classList.add('primary');
+  symbols.forEach(sym=>loadDeltaEma(sym)); // pick up current EMA state immediately for each symbol
+};
+
+function renderBotPositions(){
+  const rate = parseFloat(document.getElementById('botUsdInrRate').value) || 83;
+  botPosTbody.innerHTML = botState.positions.filter(p=>p.status==='open').length === 0
+    ? `<tr><td colspan="8" class="empty">No open bot positions.</td></tr>` : '';
+  botState.positions.filter(p=>p.status==='open').forEach(p=>{
+    const live = deltaState.lastTickPrice[p.symbol];
+    const isBtc = p.symbol === 'BTCUSD';
+    const pnlUsd = live != null ? (p.side==='buy' ? (live-p.entry) : (p.entry-live)) * p.qty : null;
+    const pnlDisplay = pnlUsd != null ? (isBtc ? pnlUsd : pnlUsd * rate) : null;
+    const pnlCurrency = isBtc ? '$' : '₹';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="sym">${p.symbol}</td>
+      <td class="lot">${p.leg}</td>
+      <td class="ltp" style="color:${p.side==='buy'?'var(--bull)':'var(--bear)'}">${p.side.toUpperCase()}</td>
+      <td class="ltp">$${p.entry.toFixed(2)}</td>
+      <td class="ltp">$${p.target.toFixed(2)}</td>
+      <td class="ltp">$${p.stoploss.toFixed(2)}</td>
+      <td class="ltp" style="color:${pnlDisplay!=null && pnlDisplay>=0?'var(--bull)':'var(--bear)'}">${pnlDisplay!=null ? pnlCurrency+pnlDisplay.toFixed(2) : '—'}</td>
+      <td><span class="badge bull">OPEN</span></td>
+    `;
+    botPosTbody.appendChild(tr);
+  });
+}
+function renderBotLog(){
+  botLogTbody.innerHTML = botState.log.length === 0 ? `<tr><td colspan="9" class="empty">No trades yet.</td></tr>` : '';
+  [...botState.log].reverse().forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="sym">${t.symbol}</td>
+      <td class="lot">${new Date(t.openTime).toLocaleTimeString()}</td>
+      <td class="lot">${new Date(t.closeTime).toLocaleTimeString()}</td>
+      <td class="lot">${t.leg}</td>
+      <td class="ltp" style="color:${t.side==='buy'?'var(--bull)':'var(--bear)'}">${t.side.toUpperCase()}</td>
+      <td class="ltp">$${t.entry.toFixed(2)}</td>
+      <td class="ltp">$${t.exit.toFixed(2)}</td>
+      <td class="lot">${t.reason}</td>
+      <td class="ltp" style="color:${t.pnl>=0?'var(--bull)':'var(--bear)'}">${t.currency||'₹'}${t.pnl.toFixed(2)}</td>
+    `;
+    botLogTbody.appendChild(tr);
+  });
+}
+
+async function botPlaceOrder(symbol, side, size){
+  const product = await deltaGetProduct(symbol);
+  const body = { product_id: product.id, size, side, order_type: 'market_order' };
+  const result = await deltaRequest('POST', '/v2/orders', { body });
+  return result;
+}
+
+async function openBotPosition(symbol, leg, side){
+  const qty = getBotQty();
+  const usdMove = getBotUsdMoveForSymbol(symbol);
+  const targetLabel = symbol === 'BTCUSD' ? `$${usdMove.toLocaleString()}` : `₹${getBotInrForSymbol(symbol).toLocaleString()} (≈$${usdMove.toFixed(2)})`;
+  try{
+    const result = await botPlaceOrder(symbol, side, qty);
+    const entry = parseFloat(result.result?.average_fill_price || deltaState.lastTickPrice[symbol]);
+    const target = side === 'buy' ? entry + usdMove : entry - usdMove;
+    const stoploss = side === 'buy' ? entry - usdMove : entry + usdMove;
+    const pos = { id: Date.now()+'-'+leg+'-'+symbol, symbol, leg, side, entry, target, stoploss, qty, status:'open', openTime: Date.now() };
+    botState.positions.push(pos);
+    renderBotPositions();
+    notifyUser(`Bot: ${symbol} ${leg} trade opened`, `${side.toUpperCase()} ${qty} contract ${symbol} @ $${entry.toFixed(2)} · target/SL ±${targetLabel} · target $${target.toFixed(2)} · SL $${stoploss.toFixed(2)}`);
+  }catch(e){
+    notifyUser('Bot: order failed', `${symbol} ${leg} ${side} failed — ${e.message}`);
+    console.error('Bot open order failed', e);
+  }
+}
+
+async function closeBotPosition(pos, reason, exitPrice){
+  try{
+    const closeSide = pos.side === 'buy' ? 'sell' : 'buy';
+    await botPlaceOrder(pos.symbol, closeSide, pos.qty);
+    pos.status = 'closed';
+    const pnlUsd = (pos.side === 'buy' ? (exitPrice - pos.entry) : (pos.entry - exitPrice)) * pos.qty;
+    const isBtc = pos.symbol === 'BTCUSD';
+    const rate = parseFloat(document.getElementById('botUsdInrRate').value) || 83;
+    const pnlDisplay = isBtc ? pnlUsd : (pnlUsd * rate);
+    const pnlCurrency = isBtc ? '$' : '₹';
+    botState.log.push({ symbol:pos.symbol, leg:pos.leg, side:pos.side, entry:pos.entry, exit:exitPrice, reason, pnl:pnlDisplay, currency:pnlCurrency, openTime:pos.openTime, closeTime:Date.now() });
+    botState.positions = botState.positions.filter(p=>p.id !== pos.id);
+    renderBotPositions();
+    renderBotLog();
+    notifyUser(`Bot: ${pos.symbol} ${pos.leg} trade closed (${reason})`, `${pos.side.toUpperCase()} closed @ $${exitPrice.toFixed(2)} · P&L ${pnlCurrency}${pnlDisplay.toFixed(2)}`);
+  }catch(e){
+    notifyUser('Bot: close order failed', `${pos.symbol} ${pos.leg} close failed — ${e.message}`);
+    console.error('Bot close order failed', e);
+  }
+}
+
+function checkBotSignals(symbol, emaData){
+  if(!botState.armed || !emaData) return;
+  if(!getBotSymbols().includes(symbol)) return;
+  if(emaData.c9200?.daysAgo === 0){
+    const legOpen = botState.positions.find(p=>p.leg==='9/200' && p.symbol===symbol && p.status==='open');
+    if(!legOpen) openBotPosition(symbol, '9/200', emaData.c9200.status==='bull' ? 'buy' : 'sell');
+  }
+  if(emaData.c21200?.daysAgo === 0){
+    const legOpen = botState.positions.find(p=>p.leg==='21/200' && p.symbol===symbol && p.status==='open');
+    if(!legOpen) openBotPosition(symbol, '21/200', emaData.c21200.status==='bull' ? 'buy' : 'sell');
+  }
+}
+
+function checkBotPositions(symbol, currentPrice){
+  if(!botState.armed || currentPrice == null) return;
+  botState.positions.filter(p=>p.status==='open' && p.symbol===symbol).forEach(p=>{
+    if(p.side === 'buy'){
+      if(currentPrice >= p.target) closeBotPosition(p, 'Target hit', currentPrice);
+      else if(currentPrice <= p.stoploss) closeBotPosition(p, 'Stoploss hit', currentPrice);
+    } else {
+      if(currentPrice <= p.target) closeBotPosition(p, 'Target hit', currentPrice);
+      else if(currentPrice >= p.stoploss) closeBotPosition(p, 'Stoploss hit', currentPrice);
+    }
+  });
+  renderBotPositions();
+}
+setInterval(()=>{ if(botState.armed) renderBotPositions(); }, 3000);
+
+// ================= Backtest engine =================
+const btRunBtn = document.getElementById('btRunBtn');
+const btStatus = document.getElementById('btStatus');
+const btSummary = document.getElementById('btSummary');
+const btLogTbody = document.getElementById('btLogTbody');
+const btEquityCanvas = document.getElementById('btEquityCanvas');
+
+btRunBtn.onclick = async ()=>{
+  btStatus.textContent = 'Fetching historical data…';
+  btRunBtn.disabled = true;
+  try{
+    const btSymbol = document.getElementById('btSymbolSel').value;
+    const startDateVal = document.getElementById('btStartDate').value;
+    const endDateVal = document.getElementById('btEndDate').value;
+    let startTs = null, endTs = null;
+    if(startDateVal) startTs = Math.floor(new Date(startDateVal + 'T00:00:00Z').getTime()/1000);
+    if(endDateVal) endTs = Math.floor(new Date(endDateVal + 'T23:59:59Z').getTime()/1000);
+    if(startTs != null && endTs != null && startTs >= endTs){ throw new Error('"From" date must be before "To" date.'); }
+
+    const candles = await deltaFetchDailyCandles(btSymbol, startTs, endTs); // respects current timeframe selector
+    if(candles.length === 0) throw new Error(`No candles returned for ${btSymbol} in this range. Either the symbol isn't available on Delta India's API, or try a more recent date range (newer listings may have limited history).`);
+    if(candles.length < 210) throw new Error(`Only ${candles.length} candles available in this range — need 200+ for a valid 200-EMA backtest. Try widening the date range, or if ${btSymbol} was listed recently, that may be all the history available.`);
+    const closes = candles.map(c=>c.close);
+    const e9 = ema(closes, 9), e21 = ema(closes, 21), e200 = ema(closes, 200);
+    const btUsdRate = parseFloat(document.getElementById('btUsdInrRate').value) || 83;
+    const isBtc = btSymbol === 'BTCUSD';
+    const btPoints = isBtc
+      ? (parseFloat(document.getElementById('btUsdBTC').value) || 0)
+      : (parseFloat(document.getElementById('btInrXAUT').value) || 0) / btUsdRate;
+    const btQty = 1; // whole contract
+
+    const trades = [];
+    let openPositions = []; // {leg, side, entry, target, stoploss, openIdx}
+    let equity = 0;
+    const equityCurve = [];
+
+    function crossedAt(i, fastArr, slowArr){
+      if(i<1 || fastArr[i]==null||slowArr[i]==null||fastArr[i-1]==null||slowArr[i-1]==null) return null;
+      const now = fastArr[i] > slowArr[i] ? 'bull':'bear';
+      const prev = fastArr[i-1] > slowArr[i-1] ? 'bull':'bear';
+      return now !== prev ? now : null;
+    }
+
+    for(let i=200; i<candles.length; i++){
+      // check open positions against this bar's high/low first
+      openPositions = openPositions.filter(pos=>{
+        const bar = candles[i];
+        let hitTarget=false, hitStop=false, exitPrice=null, reason=null;
+        if(pos.side==='buy'){
+          if(bar.high >= pos.target){ hitTarget=true; exitPrice=pos.target; }
+          else if(bar.low <= pos.stoploss){ hitStop=true; exitPrice=pos.stoploss; }
+        } else {
+          if(bar.low <= pos.target){ hitTarget=true; exitPrice=pos.target; }
+          else if(bar.high >= pos.stoploss){ hitStop=true; exitPrice=pos.stoploss; }
+        }
+        if(hitTarget || hitStop){
+          reason = hitTarget ? 'Target hit' : 'Stoploss hit';
+          const pnl = (pos.side==='buy' ? (exitPrice-pos.entry) : (pos.entry-exitPrice)) * btQty * (isBtc ? 1 : btUsdRate);
+          equity += pnl;
+          trades.push({ leg:pos.leg, side:pos.side, entry:pos.entry, exit:exitPrice, reason, pnl, openTime:candles[pos.openIdx].time*1000 });
+          return false; // remove from open
+        }
+        return true;
+      });
+
+      // check new signals on this bar's close
+      const c9200 = crossedAt(i, e9, e200);
+      const c21200 = crossedAt(i, e21, e200);
+      if(c9200 && !openPositions.some(p=>p.leg==='9/200')){
+        const side = c9200==='bull' ? 'buy':'sell';
+        const entry = closes[i];
+        openPositions.push({ leg:'9/200', side, entry, target: side==='buy'?entry+btPoints:entry-btPoints, stoploss: side==='buy'?entry-btPoints:entry+btPoints, openIdx:i });
+      }
+      if(c21200 && !openPositions.some(p=>p.leg==='21/200')){
+        const side = c21200==='bull' ? 'buy':'sell';
+        const entry = closes[i];
+        openPositions.push({ leg:'21/200', side, entry, target: side==='buy'?entry+btPoints:entry-btPoints, stoploss: side==='buy'?entry-btPoints:entry+btPoints, openIdx:i });
+      }
+      equityCurve.push(equity);
+    }
+
+    // Any positions still open when the data runs out never hit target/stoploss —
+    // record them as unrealized (mark-to-market at the last close) instead of silently dropping them.
+    const lastClose = closes[closes.length-1];
+    openPositions.forEach(pos=>{
+      const pnl = (pos.side==='buy' ? (lastClose-pos.entry) : (pos.entry-lastClose)) * btQty * (isBtc ? 1 : btUsdRate);
+      trades.push({ leg:pos.leg, side:pos.side, entry:pos.entry, exit:lastClose, reason:'Still open (end of data)', pnl, openTime:candles[pos.openIdx].time*1000, unrealized:true });
+    });
+
+    // render summary
+    const wins = trades.filter(t=>t.pnl>0).length;
+    const totalPnlInr = trades.reduce((s,t)=>s+t.pnl,0); // already in ₹ (1 point = ₹1 by construction)
+    btSummary.style.display = 'block';
+    const btCurrency = isBtc ? '$' : '₹';
+    const targetDesc = isBtc ? `$${btPoints} points` : `₹${(parseFloat(document.getElementById('btInrXAUT').value)||0).toLocaleString()} (≈$${btPoints.toFixed(2)} price move)`;
+    btSummary.innerHTML = `<b>${trades.length}</b> trades · <b style="color:${wins/trades.length>=0.5?'var(--bull)':'var(--bear)'}">${trades.length?((wins/trades.length)*100).toFixed(1):0}%</b> win rate · Total P&amp;L: <b style="color:${totalPnlInr>=0?'var(--bull)':'var(--bear)'}">${btCurrency}${totalPnlInr.toLocaleString(undefined,{maximumFractionDigits:0})}</b> · ${btSymbol} target/SL ±${targetDesc} · 1 contract per leg`;
+
+    // equity curve chart
+    btEquityCanvas.style.display = 'block';
+    const ctx = btEquityCanvas.getContext('2d');
+    const w = btEquityCanvas.width, h = btEquityCanvas.height;
+    ctx.clearRect(0,0,w,h);
+    if(equityCurve.length > 1){
+      const min = Math.min(0, ...equityCurve), max = Math.max(0, ...equityCurve);
+      const range = (max-min) || 1;
+      const x = i => (i/(equityCurve.length-1)) * (w-20) + 10;
+      const y = v => h - 20 - ((v-min)/range) * (h-40);
+      ctx.strokeStyle = '#2a3242'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(10, y(0)); ctx.lineTo(w-10, y(0)); ctx.stroke();
+      ctx.strokeStyle = totalPnlInr>=0 ? '#22c55e' : '#f0475a'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      equityCurve.forEach((v,i)=>{ if(i===0) ctx.moveTo(x(i),y(v)); else ctx.lineTo(x(i),y(v)); });
+      ctx.stroke();
+    }
+
+    // trade log
+    btLogTbody.innerHTML = trades.length === 0 ? `<tr><td colspan="7" class="empty">No signals fired in this window — no 9/200 or 21/200 EMA crossover occurred for this symbol/date range.</td></tr>` : '';
+    [...trades].reverse().forEach(t=>{
+      const tr = document.createElement('tr');
+      if(t.unrealized) tr.style.opacity = '0.75';
+      tr.innerHTML = `
+        <td class="lot">${new Date(t.openTime).toLocaleDateString()}</td>
+        <td class="lot">${t.leg}</td>
+        <td class="ltp" style="color:${t.side==='buy'?'var(--bull)':'var(--bear)'}">${t.side.toUpperCase()}</td>
+        <td class="ltp">$${t.entry.toFixed(2)}</td>
+        <td class="ltp">$${t.exit.toFixed(2)}</td>
+        <td class="lot">${t.unrealized ? `<span style="color:var(--watch);">${t.reason}</span>` : t.reason}</td>
+        <td class="ltp" style="color:${t.pnl>=0?'var(--bull)':'var(--bear)'}">${btCurrency}${t.pnl.toFixed(2)}${t.unrealized ? ' (unrealized)' : ''}</td>
+      `;
+      btLogTbody.appendChild(tr);
+    });
+    const openCount = trades.filter(t=>t.unrealized).length;
+    btStatus.textContent = `Backtested ${candles.length} candles.` + (openCount ? ` ${openCount} position(s) never hit target/SL and are still open at the end of the window — shown as unrealized.` : '');
+  }catch(e){
+    btStatus.textContent = `Error: ${e.message}`;
+  }
+  btRunBtn.disabled = false;
+};
+
+// ================= Market Overview =================
+const moGrid = document.getElementById('moGrid');
+const moGridSlow = document.getElementById('moGridSlow');
+const moRefreshBtn = document.getElementById('moRefreshBtn');
+const moStatus = document.getElementById('moStatus');
+
+// Approximate NIFTY 50 sector/index weightage making up ~75% of the index — static, illustrative
+// (sourced from typical NSE factsheet ranges; actual weights drift with rebalancing and price moves).
+const NIFTY_SECTOR_WEIGHTS = [
+  { name:'Financial Services (Bank Nifty)', pct:34, key:'NSE_INDEX|Nifty Bank' },
+  { name:'Information Technology (Nifty IT)', pct:13, key:'NSE_INDEX|Nifty IT' },
+  { name:'Oil, Gas & Consumables (Nifty Oil & Gas)', pct:11, key:'NSE_INDEX|Nifty Oil & Gas' },
+  { name:'FMCG (Nifty FMCG)', pct:8, key:'NSE_INDEX|Nifty FMCG' },
+  { name:'Automobile (Nifty Auto)', pct:7, key:'NSE_INDEX|Nifty Auto' },
+];
+
+function moBox(title, rows, formatFn){
+  const body = rows.length === 0
+    ? `<div class="mo-empty">No data yet — refresh your watchlist first.</div>`
+    : rows.map(formatFn).join('');
+  return `<div class="mo-box"><h4>${title}</h4>${body}</div>`;
+}
+function moRow(left, right, color, symbol){
+  const priceSpan = symbol ? `<span class="mo-price" data-mo-price="${symbol}">₹—</span>` : '';
+  return `<div class="mo-row"><span class="mo-left"><span>${left}</span>${priceSpan}</span><span style="${color?`color:${color};`:''}">${right}</span></div>`;
+}
+async function fetchSectorIndexLive(){
+  const results = [];
+  const todayStr = fmtDate(new Date());
+  for(const sec of NIFTY_SECTOR_WEIGHTS){
+    try{
+      const to = new Date(); const from = new Date(); from.setDate(from.getDate()-10);
+      const url = `https://api.upstox.com/v3/historical-candle/${encodeURIComponent(sec.key)}/days/1/${fmtDate(to)}/${fmtDate(from)}`;
+      const res = await fetch(url, { headers:{ 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+      const data = await res.json();
+      if(data.status !== 'success' || !data.data.candles?.length) throw new Error('no data');
+      const candles = data.data.candles.slice().sort((a,b)=> new Date(a[0])-new Date(b[0]));
+      const lastClose = candles[candles.length-1][4];
+      // Use the last candle whose date isn't today — same fix applied to the main watchlist rows.
+      let prevClose = candles[candles.length-2]?.[4] ?? lastClose;
+      for(let i=candles.length-1; i>=0; i--){
+        const candleDateStr = fmtDate(new Date(candles[i][0]));
+        if(candleDateStr !== todayStr){ prevClose = candles[i][4]; break; }
+      }
+      const liveMap = await fetchLiveLtpBatch([sec.key]);
+      const ltp = liveMap[sec.key] != null ? liveMap[sec.key] : lastClose;
+      const chgPct = ((ltp-prevClose)/prevClose*100);
+      results.push({ ...sec, ltp, chgPct, error:null });
+    }catch(e){
+      results.push({ ...sec, ltp:null, chgPct:null, error: e.message });
+    }
+  }
+  return results;
+}
+
+function renderSectorWeightBox(rows){
+  return `<div class="mo-box"><h4>NIFTY Sector Weightage (~75%)</h4>` + rows.map(r=>{
+    if(r.error) return moRow(r.name, `${r.pct}% wt · n/a`);
+    return `<div class="mo-row"><span class="mo-left"><span>${r.name}</span><span class="mo-price">₹${r.ltp.toFixed(2)}</span></span><span style="color:${r.chgPct>=0?'var(--bull)':'var(--bear)'}">${r.pct}% wt · ${r.chgPct>=0?'+':''}${r.chgPct.toFixed(2)}%</span></div>`;
+  }).join('') + `</div>`;
+}
+
+function computeGainersLosers(){
+  const withData = state.stocks.filter(s=>s.data && !s.isIndex);
+  const sorted = [...withData].sort((a,b)=> b.data.chgPct - a.data.chgPct);
+  return { gainers: sorted.slice(0,5), losers: sorted.slice(-5).reverse() };
+}
+function computeVolume(){
+  const withData = state.stocks.filter(s=>s.data && s.data.volume != null && !s.isIndex);
+  const sorted = [...withData].sort((a,b)=> b.data.volume - a.data.volume);
+  return { high: sorted.slice(0,5), low: sorted.slice(-5).reverse() };
+}
+function computeSectorPerformance(){
+  const groups = {};
+  state.stocks.filter(s=>s.data && !s.isIndex).forEach(s=>{
+    const sector = SECTOR_MAP[s.symbol] || 'Other';
+    if(!groups[sector]) groups[sector] = [];
+    groups[sector].push(s.data.chgPct);
+  });
+  const rows = Object.entries(groups).map(([sector, chgs])=>({
+    sector, avgChg: chgs.reduce((a,b)=>a+b,0)/chgs.length, count: chgs.length
+  }));
+  rows.sort((a,b)=> b.avgChg - a.avgChg);
+  return rows;
+}
+function computeNifty75List(){
+  return NIFTY_75PCT_LIST.map(sym=>{
+    const s = state.stocks.find(st=>st.symbol===sym);
+    return { symbol: sym, data: s?.data || null };
+  });
+}
+
+async function computeIvStraddleRankings(){
+  const candidates = state.stocks.filter(s=>!s.isIndex && s.lotSize != null && s.data);
+  const results = [];
+  let i = 0;
+  for(const stock of candidates){
+    i++;
+    moStatus.textContent = `Fetching IV/straddle… ${i} / ${candidates.length}`;
+    try{
+      await ensureResolved(stock);
+      const contractUrl = `https://api.upstox.com/v2/option/contract?instrument_key=${encodeURIComponent(stock.key)}`;
+      const cRes = await fetch(contractUrl, { headers:{ 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+      const cData = await cRes.json();
+      if(cData.status !== 'success') continue;
+      const expiries = [...new Set((cData.data||[]).map(c=>c.expiry))].sort((a,b)=> new Date(a)-new Date(b));
+      if(expiries.length === 0) continue;
+      const chainUrl = `https://api.upstox.com/v2/option/chain?instrument_key=${encodeURIComponent(stock.key)}&expiry_date=${expiries[0]}`;
+      const chRes = await fetch(chainUrl, { headers:{ 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+      const chData = await chRes.json();
+      if(chData.status !== 'success') continue;
+      const rows = chData.data || [];
+      if(rows.length === 0) continue;
+      const spot = rows[0].underlying_spot_price;
+      let atm = rows[0], atmDiff = Infinity;
+      rows.forEach(r=>{ const d = Math.abs(r.strike_price - spot); if(d < atmDiff){ atmDiff = d; atm = r; } });
+      const callIv = atm.call_options?.option_greeks?.iv;
+      const putIv = atm.put_options?.option_greeks?.iv;
+      const callLtp = atm.call_options?.market_data?.ltp;
+      const putLtp = atm.put_options?.market_data?.ltp;
+      if(callIv != null && putIv != null){
+        results.push({ symbol: stock.symbol, avgIv: (callIv+putIv)/2, straddle: (callLtp||0)+(putLtp||0) });
+      }
+    }catch(e){ /* skip this stock */ }
+    await new Promise(r=>setTimeout(r, 120));
+  }
+  return results;
+}
+
+function renderFastMarketOverviewBoxes(){
+  const { gainers, losers } = computeGainersLosers();
+  const { high: highVol, low: lowVol } = computeVolume();
+  const sectors = computeSectorPerformance();
+  const nifty75 = computeNifty75List();
+
+  // Preserve the sector-weightage box's existing content across the 30s auto-refresh —
+  // it's fetched separately (manually / on connect) to avoid overlapping requests and stale-data glitches.
+  const existingSectorBox = document.getElementById('moSectorWeightBox')?.outerHTML
+    || `<div class="mo-box" id="moSectorWeightBox"><h4>NIFTY Sector Weightage (~75%)</h4><div class="mo-empty">${state.token ? 'Loading live prices…' : 'Connect to load live prices.'}</div></div>`;
+
+  // Sync the news input's live typed value into its HTML attribute so outerHTML capture below preserves it
+  // Preserve the News box's existing content across the 30s auto-refresh
+  const existingNewsBox = document.getElementById('moNewsBox')?.outerHTML || `
+    <div class="mo-box" id="moNewsBox" style="border-left:3px solid #5b8dee;">
+      <h4>📰 Market News &amp; Events</h4>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:10.5px; color:var(--sub);">From Upstox News API · your watchlist</span>
+        <button id="newsRefreshBtn" style="padding:6px 10px; font-size:11px;">Load</button>
+      </div>
+      <div style="font-size:10.5px; color:var(--sub); margin-bottom:8px;"><span id="newsStatus"></span></div>
+      <div id="newsGrid" style="display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto;">
+        <div class="mo-empty">${state.token ? 'Click Load to fetch news for your watchlist.' : 'Connect first, then click Load.'}</div>
+      </div>
+    </div>`;
+
+  moGrid.innerHTML = [
+    `<div style="display:flex; flex-direction:column; gap:14px;">
+      ${moBox('Top 5 Gainers', gainers, s=> moRow(s.symbol, `+${s.data.chgPct.toFixed(2)}%`, 'var(--bull)', s.symbol))}
+      ${existingSectorBox}
+    </div>`,
+    moBox('Top 5 Losers', losers, s=> moRow(s.symbol, `${s.data.chgPct.toFixed(2)}%`, 'var(--bear)', s.symbol)),
+    moBox('Top 5 High Volume', highVol, s=> moRow(s.symbol, s.data.volume.toLocaleString(), null, s.symbol)),
+    moBox('Top 5 Low Volume', lowVol, s=> moRow(s.symbol, s.data.volume.toLocaleString(), null, s.symbol)),
+    moBox('Sector Performance', sectors, r=> moRow(`${r.sector} (${r.count})`, `${r.avgChg>=0?'+':''}${r.avgChg.toFixed(2)}%`, r.avgChg>=0?'var(--bull)':'var(--bear)')),
+    `<div style="display:flex; flex-direction:column; gap:14px;">
+      ${moBox('~75% of NIFTY Weight (Stocks)', nifty75, r=> r.data ? moRow(r.symbol, `${r.data.chgPct>=0?'+':''}${r.data.chgPct.toFixed(2)}%`, r.data.chgPct>=0?'var(--bull)':'var(--bear)', r.symbol) : moRow(r.symbol, 'not loaded'))}
+      ${existingNewsBox}
+    </div>`,
+  ].join('');
+  wireNewsBox();
+
+  // Fetch sector index prices only once (not on every 30s tick) — guarded against overlap
+  if(state.token && !document.getElementById('moSectorWeightBox').dataset.loaded && !renderFastMarketOverviewBoxes._sectorFetchInFlight){
+    renderFastMarketOverviewBoxes._sectorFetchInFlight = true;
+    fetchSectorIndexLive().then(rows=>{
+      const box = document.getElementById('moSectorWeightBox');
+      if(box){ box.outerHTML = renderSectorWeightBox(rows); document.getElementById('moSectorWeightBox').dataset.loaded = 'true'; }
+    }).catch(()=>{}).finally(()=>{ renderFastMarketOverviewBoxes._sectorFetchInFlight = false; });
+  }
+
+  // Only initialize the slow grid's placeholder content if it hasn't been populated yet
+  if(!moGridSlow.dataset.initialized){
+    moGridSlow.innerHTML = [
+      `<div class="mo-box" id="moIvHighBox"><h4>Top 5 High IV Today</h4><div class="mo-empty">Click Refresh to fetch (slower — option chain data).</div></div>`,
+      `<div class="mo-box" id="moIvLowBox"><h4>Top 5 Low IV Today</h4><div class="mo-empty">Click Refresh to fetch.</div></div>`,
+      `<div class="mo-box" id="moStraddleHighBox"><h4>Top 5 High Value Straddle</h4><div class="mo-empty">Click Refresh to fetch.</div></div>`,
+      `<div class="mo-box" id="moStraddleLowBox"><h4>Top 5 Low Value Straddle</h4><div class="mo-empty">Click Refresh to fetch.</div></div>`,
+    ].join('');
+    moGridSlow.dataset.initialized = 'true';
+  }
+  updateMoLivePrices();
+}
+
+async function refreshMarketOverview(){
+  moRefreshBtn.disabled = true;
+  moStatus.textContent = 'Computing from current watchlist…';
+  renderFastMarketOverviewBoxes();
+
+  if(state.token){
+    try{
+      const ivResults = await computeIvStraddleRankings();
+      const byIv = [...ivResults].sort((a,b)=> b.avgIv - a.avgIv);
+      const byStraddle = [...ivResults].sort((a,b)=> b.straddle - a.straddle);
+      document.getElementById('moIvHighBox').innerHTML = `<h4>Top 5 High IV Today</h4>` + (byIv.length ? byIv.slice(0,5).map(r=>moRow(r.symbol, r.avgIv.toFixed(1)+'%')).join('') : `<div class="mo-empty">No option data available.</div>`);
+      document.getElementById('moIvLowBox').innerHTML = `<h4>Top 5 Low IV Today</h4>` + (byIv.length ? byIv.slice(-5).reverse().map(r=>moRow(r.symbol, r.avgIv.toFixed(1)+'%')).join('') : `<div class="mo-empty">No option data available.</div>`);
+      document.getElementById('moStraddleHighBox').innerHTML = `<h4>Top 5 High Value Straddle</h4>` + (byStraddle.length ? byStraddle.slice(0,5).map(r=>moRow(r.symbol, '₹'+r.straddle.toFixed(2))).join('') : `<div class="mo-empty">No option data available.</div>`);
+      document.getElementById('moStraddleLowBox').innerHTML = `<h4>Top 5 Low Value Straddle</h4>` + (byStraddle.length ? byStraddle.slice(-5).reverse().map(r=>moRow(r.symbol, '₹'+r.straddle.toFixed(2))).join('') : `<div class="mo-empty">No option data available.</div>`);
+    }catch(e){
+      moStatus.textContent = `IV/Straddle error: ${e.message}`;
+    }
+  }
+
+  moStatus.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+  moRefreshBtn.disabled = false;
+}
+moRefreshBtn.onclick = refreshMarketOverview;
+
+let moAutoTimer = null;
+document.getElementById('moAutoChk').onchange = (e)=>{
+  if(e.target.checked){
+    renderFastMarketOverviewBoxes();
+    moAutoTimer = setInterval(renderFastMarketOverviewBoxes, 30000);
+  } else if(moAutoTimer){
+    clearInterval(moAutoTimer);
+    moAutoTimer = null;
+  }
+};
+
+// ================= News & Events (Upstox News API) =================
+function wireNewsBox(){
+  const btn = document.getElementById('newsRefreshBtn');
+  if(!btn) return;
+  btn.onclick = async ()=>{
+    const statusEl = document.getElementById('newsStatus');
+    const gridEl = document.getElementById('newsGrid');
+    if(!state.token){ statusEl.textContent = 'Connect to Upstox first'; return; }
+    statusEl.textContent = 'Loading…';
+    btn.disabled = true;
+    try{
+      // Use up to 30 instrument keys from the current watchlist (resolved stocks + indices)
+      const keys = state.stocks.filter(s=>s.key).map(s=>s.key).slice(0,30);
+      if(keys.length === 0) throw new Error('No resolved stocks in your watchlist yet');
+      const url = `https://api.upstox.com/v2/news?category=instrument_keys&instrument_keys=${encodeURIComponent(keys.join(','))}`;
+      const res = await fetch(url, { headers:{ 'Accept':'application/json', 'Authorization':'Bearer '+state.token } });
+      const data = await res.json();
+      if(data.status !== 'success') throw new Error(data.errors?.[0]?.message || 'Upstox News API error');
+
+      // Response is keyed by instrument key -> array of news items; flatten and dedupe by article_link
+      const seen = new Set();
+      const articles = [];
+      Object.values(data.data || {}).forEach(list=>{
+        (Array.isArray(list) ? list : []).forEach(item=>{
+          if(item.article_link && !seen.has(item.article_link)){
+            seen.add(item.article_link);
+            articles.push(item);
+          }
+        });
+      });
+      articles.sort((a,b)=> (b.published_at||0) - (a.published_at||0));
+
+      if(articles.length === 0){
+        gridEl.innerHTML = `<div class="mo-empty">No news found for your watchlist right now.</div>`;
+      } else {
+        gridEl.innerHTML = articles.slice(0,15).map(a=>{
+          const timeAgo = a.published_at ? new Date(a.published_at).toLocaleString() : '';
+          return `<div class="news-card">
+            ${a.thumbnail ? `<img src="${a.thumbnail}" onerror="this.style.display='none'">` : ''}
+            <div>
+              <a class="news-title" href="${a.article_link}" target="_blank">${a.heading}</a>
+              <div class="news-meta">${timeAgo}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      statusEl.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    }catch(e){
+      statusEl.textContent = `Error: ${e.message}`;
+    }
+    btn.disabled = false;
+  };
+}
+
+renderRows();
+</script>
+</body>
+</html>
